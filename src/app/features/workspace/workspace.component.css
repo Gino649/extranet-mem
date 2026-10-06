@@ -1,0 +1,316 @@
+@reference "../../../styles.css";
+
+/* ========================================================================
+   EXTRANET-MEM · CONSOLA DE TRÁMITE CENTRALIZADA
+   Modo claro institucional: fondo cemento, tarjetas blancas elevadas
+   y acento dorado mineral MINEM para las acciones de despacho.
+   ======================================================================== */
+
+/* --------------------------------------------------------------------
+   SUPERFICIES ELEVADAS
+   Tarjetas de búsqueda, grid de resultados y menú lateral comparten el
+   mismo acabado para que la consola se lea como un solo sistema.
+   ------------------------------------------------------------------ */
+
+.tarjeta-elevada {
+  @apply rounded-2xl border border-slate-200/80 bg-white p-6;
+  box-shadow: 0 4px 20px rgb(15 23 42 / 0.03);
+}
+
+/* --------------------------------------------------------------------
+   CABECERA SUPERIOR FIJA
+   ------------------------------------------------------------------ */
+
+.cabecera {
+  @apply sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-lg;
+}
+
+.cabecera-titulo {
+  @apply text-lg font-black tracking-tight text-slate-900;
+}
+
+/* Sesión del titular: disparador del menú flotante. */
+.sesion-disparador {
+  @apply flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 transition-colors duration-200 hover:border-amber-400;
+}
+
+.sesion-avatar {
+  @apply grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-xs font-black text-slate-950;
+}
+
+.sesion-menu {
+  @apply absolute right-0 z-40 mt-2 w-60 overflow-hidden rounded-2xl border border-slate-200 bg-white;
+  box-shadow: 0 20px 45px rgb(15 23 42 / 0.12);
+}
+
+/* --------------------------------------------------------------------
+   MENÚ LATERAL CON COLAPSO FLUIDO
+   ------------------------------------------------------------------ */
+
+.menu-lateral {
+  @apply shrink-0 overflow-hidden border-r border-slate-200/80 bg-white transition-all duration-300 ease-out;
+}
+
+/*
+ * El ancho lo poseen estas clases y la utilidad de la plantilla se limita a
+ * `w-72`, que actúa como ancho de contenido una vez abierto el panel. Cerrado,
+ * el aside colapsa a `w-0` y su `overflow-hidden` recorta ese contenido, de modo
+ * que no hay dos medidas compitiendo por el mismo ancho.
+ */
+.menu-lateral--abierto {
+  @apply w-64 xl:w-72;
+}
+
+.menu-lateral--cerrado {
+  @apply w-0 border-r-0;
+}
+
+.menu-titulo {
+  @apply px-5 pb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400;
+}
+
+/* Enlaces de navegación acoplados a la vista activa. */
+.menu-enlace {
+  @apply flex w-full items-center gap-3 border-l-2 border-transparent px-5 py-2.5 text-sm font-semibold text-slate-600 transition-colors duration-200 hover:bg-slate-50 hover:text-slate-900;
+}
+
+.menu-enlace--activo {
+  @apply border-amber-500 bg-amber-50/60 text-amber-800;
+}
+
+/* --------------------------------------------------------------------
+   ÁRBOL DINÁMICO DEL EXPEDIENTE
+   Estilos de capítulo y submenú, independientes del origen del dato.
+   ------------------------------------------------------------------ */
+
+/* Capítulo (= menú principal): gris oscuro corporativo, versalitas. */
+.capitulo-boton {
+  @apply flex w-full items-center gap-2.5 px-5 py-2.5 text-xs font-bold tracking-wider text-slate-800 uppercase transition-colors duration-200 hover:bg-slate-50;
+}
+
+.capitulo-indice {
+  @apply flex size-5 shrink-0 items-center justify-center rounded bg-slate-100 text-[10px] font-black text-slate-500;
+}
+
+.capitulo-caret {
+  @apply shrink-0 text-[9px] text-slate-400 transition-transform duration-300;
+}
+
+.capitulo-caret--abierto {
+  @apply rotate-90;
+}
+
+.capitulo-secciones {
+  @apply border-l border-slate-100;
+}
+
+/*
+ * Submenú. El `border-l-4` transparente es obligatorio en el estado inactivo:
+ * de lo contrario el borde dorado del estado activo desplazaría el texto 4px.
+ */
+.seccion-enlace {
+  @apply flex w-full items-start gap-2.5 border-l-4 border-transparent py-2 pr-4 pl-3 text-left text-[13px] leading-snug font-medium text-slate-500 transition-colors duration-200 hover:text-slate-900;
+}
+
+.seccion-enlace--activo {
+  @apply border-l-4 border-amber-500 bg-amber-500/10 pl-3 font-bold text-amber-600;
+}
+
+.seccion-numero {
+  @apply mr-1 text-[10px] font-bold text-slate-400;
+}
+
+.seccion-enlace--activo .seccion-numero {
+  @apply text-amber-500;
+}
+
+/* Sub-capas del visor de influencia (5.2.1 y 5.2.2). */
+.sub-nivel {
+  @apply ml-5 border-l border-dashed border-slate-200;
+}
+
+/* Semáforo de estado: gris, azul, verde o rojo. */
+.semaforo {
+  @apply mt-1 size-2 shrink-0 rounded-full;
+}
+
+.semaforo--gris {
+  @apply bg-slate-300;
+}
+
+.semaforo--azul {
+  @apply bg-blue-500;
+}
+
+.semaforo--verde {
+  @apply bg-emerald-500;
+}
+
+.semaforo--rojo {
+  @apply bg-red-500;
+}
+
+/* Libro abierto pulsante en secciones observadas por el evaluador. */
+.seccion-observada {
+  @apply shrink-0 animate-pulse text-sm;
+}
+
+/* --------------------------------------------------------------------
+   HOST DE SECCIÓN · ficha del submenú activo
+   ------------------------------------------------------------------ */
+
+.titulo-panel {
+  @apply text-lg font-bold text-slate-900;
+}
+
+.texto-estado {
+  @apply text-xs font-bold text-slate-700;
+}
+
+.alerta-observacion {
+  @apply mt-4 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-xs leading-relaxed font-medium text-red-800;
+}
+
+.dato-ficha {
+  @apply rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5;
+}
+
+.dato-ficha dt {
+  @apply text-[10px] font-bold tracking-wider text-slate-400 uppercase;
+}
+
+.dato-ficha dd {
+  @apply mt-0.5 text-sm font-bold text-slate-800;
+}
+
+.chip-capa {
+  @apply inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors duration-200 hover:border-amber-400 hover:text-amber-700;
+}
+
+.chip-capa--activo {
+  @apply border-amber-500 bg-amber-500/10 text-amber-700;
+}
+
+/* --------------------------------------------------------------------
+   PIE DE PÁGINA · Créditos institucionales del ministerio
+   ------------------------------------------------------------------ */
+
+.consola-pie {
+  @apply flex select-none items-center justify-between gap-x-6 gap-y-1 border-t border-slate-200 bg-white px-8 py-3.5 text-[11px] font-semibold tracking-wide text-slate-500;
+}
+
+/* En pantallas estrechas los créditos se apilan y se alinean a la izquierda. */
+@media (max-width: 47.999rem) {
+  .consola-pie {
+    @apply flex-col items-start text-left;
+  }
+}
+
+/* --------------------------------------------------------------------
+   CAMPOS DEL BUSCADOR
+   ------------------------------------------------------------------ */
+
+.campo-buscador {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-all duration-200 placeholder-slate-400;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.campo-buscador:focus {
+  @apply border-amber-500 outline-none;
+  box-shadow: 0 0 0 3px rgb(245 158 11 / 0.12);
+}
+
+.etiqueta-buscador {
+  @apply mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500;
+}
+
+/* --------------------------------------------------------------------
+   BOTONERAS · Acento dorado mineral MINEM
+   ------------------------------------------------------------------ */
+
+.boton-oro {
+  @apply inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-4 py-2.5 text-xs font-black tracking-wider text-slate-950 uppercase transition-all duration-300;
+  box-shadow: 0 4px 20px rgb(245 158 11 / 0.3);
+}
+
+.boton-oro:hover {
+  @apply -translate-y-0.5;
+  box-shadow: 0 6px 25px rgb(245 158 11 / 0.45);
+}
+
+.boton-linea {
+  @apply inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition-colors duration-200 hover:border-slate-400 hover:text-slate-900;
+}
+
+.boton-tenue {
+  @apply inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-800;
+}
+
+.boton-fila {
+  @apply rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition-colors duration-200 hover:border-amber-400 hover:text-amber-800;
+}
+
+/* --------------------------------------------------------------------
+   SEMÁFORO DE ESTADO
+   ------------------------------------------------------------------ */
+
+.estado-chip {
+  @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold;
+}
+
+.estado-chip--borrador {
+  @apply bg-slate-100 text-slate-600;
+}
+
+.estado-chip--revision {
+  @apply bg-blue-50 text-blue-700;
+}
+
+.estado-chip--observado {
+  @apply bg-red-50 text-red-700;
+}
+
+.estado-chip--aprobado {
+  @apply bg-emerald-50 text-emerald-700;
+}
+
+/* --------------------------------------------------------------------
+   MODAL ESMERILADO DE SELECCIÓN DE IGA
+   ------------------------------------------------------------------ */
+
+.modal-fondo {
+  @apply fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4 backdrop-blur-sm;
+}
+
+/*
+ * Panel del selector de IGA.
+ *
+ * El alto se acota en dos tramos porque el contenido no cabe en una laptop:
+ * por debajo de 1024 px el panel ocupa casi toda la ventana, y desde ahí se
+ * ajusta a lo que necesite con un techo del 85 %. Sin ese techo el fondo, que
+ * centra con `place-items-center`, empalmaba un panel más alto que la pantalla
+ * por arriba y por abajo: desaparecían el rótulo «Nuevo Expediente» y los
+ * botones «Cancelar» / «Iniciar Registro», sin barra con que alcanzarlos.
+ *
+ * `overflow-hidden` en el panel y `flex-1 overflow-y-auto` en el cuerpo
+ * reparten el scroll: cabecera y pie quedan fijos y solo se desplaza la lista
+ * de instrumentos.
+ */
+.modal-panel {
+  @apply mx-auto my-4 flex h-[calc(100vh-4rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 lg:h-auto lg:max-h-[85vh];
+  /* Sustituye a `shadow-2xl`: misma escala, con el doble filo interior que
+     separa el panel del velo. Declarado aparte porque una regla `box-shadow`
+     posterior anularía la utilidad. */
+  box-shadow:
+    0 30px 70px rgb(15 23 42 / 0.25),
+    inset 0 1px 0 rgb(255 255 255 / 1);
+}
+
+.iga-tarjeta {
+  @apply w-full rounded-2xl border-2 border-slate-200 bg-white p-6 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-400;
+}
+
+.iga-tarjeta--seleccionada {
+  @apply border-amber-500 bg-amber-50/60;
+  box-shadow: 0 10px 30px rgb(245 158 11 / 0.18);
+}

@@ -1,0 +1,58 @@
+@reference '../../../../../styles.css';
+
+/* ============ CABECERA ESTANDAR ============ */
+.tarjeta {
+  @apply w-full bg-white border border-slate-200/80 rounded-2xl p-8;
+  box-shadow: 0 8px 30px rgb(15 23 42 / 0.04);
+}
+
+.cabecera {
+  @apply border-b border-slate-100 pb-4;
+}
+
+.etiqueta {
+  @apply mb-1.5 block text-[10px] font-bold tracking-[0.18em] text-slate-500 uppercase;
+}
+
+.titulo {
+  @apply text-xl font-black text-slate-900 tracking-tight;
+}
+
+.bajada {
+  @apply text-xs text-slate-400 mt-1 font-medium;
+}
+
+/* ============ AVISOS ============ */
+.aviso-bifurcacion {
+  @apply mt-3 rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800;
+}
+
+.aviso-guardado {
+  @apply mt-4 rounded-lg border border-emerald-200/70 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-700;
+}
+
+/* ============ ANIMACIONES ============ */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: aparecer 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in {
+    animation: none;
+  }
+}
+
+.boton-validar {
+  @apply cursor-pointer rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-6 py-3.5 text-xs font-black tracking-wider text-slate-950 uppercase shadow-md transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:from-slate-100 disabled:via-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:shadow-none;
+}

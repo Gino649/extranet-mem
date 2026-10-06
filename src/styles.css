@@ -1,0 +1,282 @@
+@import 'tailwindcss' source(none);
+@source './app/**/*.{ts,html,css}';
+
+/* ========================================================================
+   EXTRANET-MEM · HOJA DE ESTILOS GLOBAL
+   Identidad corporativa MINEM (Perú)
+   --------------------------------------------------------------------
+   1. Paleta institucional (tokens @theme)
+   2. Animaciones de entrada
+   3. Capa base del documento
+   4. Componentes de alta fidelidad reutilizables
+   --------------------------------------------------------------------
+   Los componentes se declaran en archivos independientes
+   (component.ts / component.html / component.css) y consumen estas clases.
+   ======================================================================== */
+
+/* ======================================================================
+   1 · PALETA INSTITUCIONAL MINEM
+   Grafito profundo, rojo del Estado y oro mineral.
+   ==================================================================== */
+@theme {
+  /* --- Gris Grafito / Carbón Profundo: solidez y profundidad mineral --- */
+  --color-minem-grafito: #020617; /* bg-slate-950 · capa base */
+  --color-minem-grafito-medio: #0f172a; /* bg-slate-900 · contenedores */
+  --color-minem-grafito-alto: #1e293b; /* bg-slate-800 · superficies */
+  --color-minem-borde: #334155; /* border-slate-700 · separadores */
+
+  /* --- Rojo Institucional: poder del Estado, uso exclusivo en error --- */
+  --color-minem-rojo: #ef4444; /* text-red-500 */
+  --color-minem-rojo-fuerte: #b91c1c; /* bg-red-700 */
+  --color-minem-rojo-borde: #dc2626; /* border-red-600 */
+
+  /* --- Oro / Bronce Mineral: CTA, selección y éxito normativo --- */
+  --color-minem-oro: #f59e0b; /* text-amber-500 */
+  --color-minem-bronce: #d97706; /* via-amber-600 */
+  --color-minem-oro-claro: #ca8a04; /* to-yellow-600 */
+
+  /* --- Legibilidad sobre grafito --- */
+  --color-minem-tenue: #94a3b8; /* text-slate-400 · metadatos */
+  --color-minem-brise: #cbd5e1; /* text-slate-300 · texto secundario */
+  --color-minem-humo: #64748b; /* placeholder-slate-500 */
+
+  /* --- Tono de estado normativo (SEMÁFORO SEAL) --- */
+  --color-minem-aprobado: #34d399; /* emerald-400 */
+  --color-minem-observado: #f87171; /* red-400 */
+  --color-minem-evaluacion: #93c5fd; /* blue-300 */
+
+  /* --- Identidad heredada del sistema SEAL --- */
+  --color-seal-azul: #0b3d91;
+  --color-seal-azul-claro: #1d5fd6;
+  --color-seal-verde: #16a34a;
+  --color-seal-ambar: #d97706;
+  --color-seal-rojo: #dc2626;
+
+  /* --- Relieve técnico de los CTA de despacho --- */
+  --shadow-minem-cta: 0 4px 20px rgb(245 158 11 / 0.25);
+  --shadow-minem-cta-fuerte: 0 4px 30px rgb(245 158 11 / 0.4);
+  --shadow-minem-cristal: inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+/* ======================================================================
+   2 · ANIMACIONES DE ENTRADA
+   ==================================================================== */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@theme {
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-zoom-in: zoom-in 0.25s ease-out;
+}
+
+/* ======================================================================
+   3 · CAPA BASE DEL DOCUMENTO
+   ==================================================================== */
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-slate-950 font-sans text-slate-100 antialiased;
+  }
+
+  /* Foco visible y coherente con el acento oro mineral en todo el sistema. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-amber-500;
+  }
+
+  /* Barra de desplazamiento discreta sobre superficies grafito. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-950;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full border-2 border-slate-950 bg-slate-800;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-700;
+  }
+}
+
+/* ======================================================================
+   4 · COMPONENTES DE ALTA FIDELIDAD
+   Superficies, entradas de precisión y CTA de despacho.
+   ==================================================================== */
+@layer components {
+  /* --- Cristal esmerilado: métricas e información flotante ------------ */
+  .vidrio-esmerilado {
+    @apply rounded-xl border border-white/10 bg-white/5 backdrop-blur-lg;
+    box-shadow: var(--shadow-minem-cristal);
+  }
+
+  /* --- Tarjeta grafito: contenedor de contenido ----------------------- */
+  .tarjeta-grafito {
+    @apply rounded-xl border border-slate-800 bg-slate-900 shadow-lg;
+  }
+
+  .tarjeta-grafito-hundida {
+    @apply rounded-xl border border-slate-800 bg-slate-950/40;
+  }
+
+  /* --- Entradas de datos de alta precisión ---------------------------- */
+  .campo-tecnico {
+    @apply w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3.5 text-slate-200 transition-all duration-300 outline-none placeholder-slate-500;
+    box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.4);
+  }
+
+  .campo-tecnico:focus {
+    @apply border-amber-500 bg-slate-900;
+    box-shadow:
+      inset 0 2px 4px rgb(0 0 0 / 0.4),
+      0 0 0 4px rgb(245 158 11 / 0.1);
+  }
+
+  .campo-tecnico:disabled {
+    @apply cursor-not-allowed border-slate-800 bg-slate-900 text-slate-500 opacity-60;
+  }
+
+  .campo-tecnico-error {
+    @apply border-red-600 text-red-400;
+  }
+
+  .campo-tecnico-error:focus {
+    @apply border-red-500 bg-slate-950;
+    box-shadow: 0 0 0 4px rgb(220 38 38 / 0.12);
+  }
+
+  /* --- Botón de despacho transaccional (CTA) -------------------------- */
+  .boton-cta {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-5 py-3 text-xs font-black tracking-wider whitespace-nowrap text-slate-950 uppercase transition-all duration-300;
+    box-shadow: var(--shadow-minem-cta);
+  }
+
+  .boton-cta:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-minem-cta-fuerte);
+  }
+
+  .boton-cta:disabled {
+    @apply cursor-not-allowed bg-slate-800 text-slate-500;
+    box-shadow: none;
+  }
+
+  /* --- Botón secundario grafito --------------------------------------- */
+  .boton-neutro {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700;
+  }
+
+  .boton-neutro:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  /* --- Botón de acuse administrativo ---------------------------------- */
+  .boton-acuse {
+    @apply inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 px-4 py-2 text-xs font-bold text-white shadow-md transition-all duration-200;
+  }
+
+  .boton-acuse:hover:not(:disabled) {
+    transform: translateY(-2px);
+    @apply from-red-700 to-red-800;
+  }
+
+  /* --- Insignias de estado normativo ---------------------------------- */
+  .insignia-aprobado {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-400;
+  }
+
+  .insignia-observado {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-red-600/15 px-2.5 py-1 text-[11px] font-bold text-red-400;
+  }
+
+  .insignia-evaluacion {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 px-2.5 py-1 text-[11px] font-bold text-blue-300;
+  }
+
+  .insignia-pendiente {
+    @apply inline-flex animate-pulse items-center rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-black text-white;
+  }
+
+  .insignia-notificada {
+    @apply inline-flex items-center rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold text-emerald-400;
+  }
+
+  /* --- Grillas de alta densidad --------------------------------------- */
+  .grilla-densa thead {
+    @apply bg-slate-950/40 text-[11px] tracking-wider text-slate-400 uppercase;
+  }
+
+  .grilla-densa tbody tr {
+    @apply transition-colors hover:bg-slate-950/60;
+  }
+
+  .grilla-densa th {
+    @apply px-5 py-3.5 font-bold;
+  }
+
+  .grilla-densa td {
+    @apply px-5 py-4;
+  }
+
+  /* ======================================================================
+     5 · CONTROLES DEL VISOR OPENLAYERS (SECCIÓN 2.5)
+
+     Estas reglas viven aquí y no en el componente a propósito. OpenLayers
+     construye el viewport, los botones y la atribución con
+     `document.createElement` dentro del div destino: son nodos que Angular no
+     conoce, así que no llevan el atributo `_ngcontent-*`. Con la
+     encapsulación emulated de un `styles` de componente, todo selector se
+     reescribe como `.ol-zoom[_ngcontent-*]` y no casa con nada. Los controles
+     se quedaban sueltos porque su hoja de estilo nunca llegó a aplicarse.
+     ====================================================================== */
+  .ol-zoom {
+    @apply absolute top-4 left-4 z-30 flex flex-col gap-1;
+  }
+
+  .ol-zoom button {
+    @apply h-8 w-8 cursor-pointer rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-900 shadow-sm;
+  }
+
+  .ol-zoom button:hover,
+  .ol-zoom button:focus {
+    @apply bg-slate-50 text-amber-700;
+  }
+
+  /* La atribución del mapa base al pie, para no competir con la leyenda. */
+  .ol-attribution {
+    @apply absolute right-2 bottom-2 z-30 rounded-md border border-slate-200 bg-white/85 px-2 py-0.5 text-[10px] text-slate-500 backdrop-blur-sm;
+  }
+
+  .ol-attribution ul {
+    @apply m-0 flex list-none gap-1 p-0;
+  }
+
+  /* El botón de plegar también es un control: hereda la escala de los demás. */
+  .ol-attribution button {
+    @apply cursor-pointer p-0 text-[10px] leading-none;
+  }
+}

@@ -1,0 +1,29 @@
+<div class="w-full space-y-8 pb-12">
+  @for (seccion of microSecciones(); track seccion.id) {
+    <div [id]="'seccion-' + seccion.id" class="scroll-mt-24">
+      <!--
+        El motor de observaciones se antepone a la sección y solo si tiene
+        bandeja. Va aquí y no dentro de cada pieza porque el acta del evaluador
+        es del expediente, no del formulario: así una sección observada lo dice
+        aunque su propio formulario todavía no exista en el catálogo.
+      -->
+      @if (store.microComponenteEvaluadoDe(seccion.id); as ficha) {
+        <app-observaciones-evaluador
+          class="mb-8 block"
+          [numero]="seccion.id"
+          [attr.data-seccion]="ficha.id"
+        />
+      }
+      <ng-container *ngComponentOutlet="seccion.componenteRef; inputs: { numero: seccion.id }" />
+    </div>
+  } @empty {
+    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+      <p class="text-sm font-semibold text-slate-700">
+        Las microsecciones del capítulo {{ capituloId() }} aún no están habilitadas
+      </p>
+      <p class="mt-2 text-sm text-slate-500">
+        Sus piezas se incorporarán al catálogo conforme se completen.
+      </p>
+    </div>
+  }
+</div>

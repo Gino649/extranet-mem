@@ -1,0 +1,125 @@
+import { Component, Type, computed, effect, inject, input, signal } from '@angular/core';
+import { NgComponentOutlet } from '@angular/common';
+import { DaexStore } from '../../../state/daex.store';
+import { IdentificacionComponent } from '../microcomponentes-secciones/1-1-identificacion/identificacion.component';
+import { NotificacionComponent } from '../microcomponentes-secciones/1-2-notificacion/notificacion.component';
+import { AdjuntarDocumentosComponent } from '../microcomponentes-secciones/1-3-adjuntar-documentos/adjuntar-documentos.component';
+import { AntecedentesComponent } from '../microcomponentes-secciones/2-2-antecedentes/antecedentes.component';
+import { DatosProyectoComponent } from '../microcomponentes-secciones/2-1-datos-proyecto/datos-proyecto.component';
+import { DelimitacionComponent } from '../microcomponentes-secciones/2-5-delimitacion/delimitacion.component';
+import { DelimitacionMapaComponent } from '../microcomponentes-secciones/2-5-delimitacion-mapa/delimitacion-mapa.component';
+import { ObjetivosComponent } from '../microcomponentes-secciones/2-3-objetivos/objetivos.component';
+import { LocalizacionComponent } from '../microcomponentes-secciones/2-4-localizacion/localizacion.component';
+import { CronogramaComponent } from '../microcomponentes-secciones/2-6-cronograma/cronograma.component';
+import { ComponentesComponent } from '../microcomponentes-secciones/2-7-componentes/componentes.component';
+import { DemandaAguaComponent } from '../microcomponentes-secciones/2-8-demanda-agua/demanda-agua.component';
+import { InsumosEquiposComponent } from '../microcomponentes-secciones/2-9-insumos-equipos/insumos-equipos.component';
+import { PersonalComponent } from '../microcomponentes-secciones/2-10-personal/personal.component';
+import { MedioFisicoComponent } from '../microcomponentes-secciones/3-1-medio-fisico/medio-fisico.component';
+import { ArqueologiaComponent } from '../microcomponentes-secciones/3-3-arqueologia/arqueologia.component';
+import { ObservacionesEvaluadorComponent } from '../microcomponentes-comunes/observaciones-evaluador/observaciones-evaluador.component';
+
+/**
+ * Ficha de un microcomponente de sección dentro del catálogo del orquestador.
+ *
+ * `id` es el índice oficial de la sección (`'1.1'`, `'5.2.2'`) y a la vez el
+ * ancla estable del scroll. `capituloId` agrupa las fichas que el capítulo
+ * correspondiente apila. `visible` permite retirar una sección del flujo sin
+ * borrar su ficha, útil para dependencias que aún no están construidas.
+ */
+interface MicroSeccionConfig {
+  readonly id: string;
+  readonly capituloId: string;
+  readonly componenteRef: Type<unknown>;
+  readonly visible: boolean;
+}
+
+/**
+ * Orquestador central del formulario DAEX.
+ *
+ * Es el único componente que decide qué se renderiza en la columna derecha:
+ * toma el capítulo activo, filtra su catálogo de microcomponentes y los apila
+ * en un scroll continuo, en lugar de enrutar una pantalla por sección.
+ *
+ * Al recibir el capítulo desde la ruta se sincroniza con el store, de modo que
+ * el índice lateral, la barra de avance y el panel derecho comparten el mismo
+ * estado. El filtrado se hace con un `computed`, así que cambiar de capítulo no
+ * recrea la columna: solo cambia la proyección.
+ */
+@Component({
+  selector: 'app-contenedor-capitulo',
+  imports: [NgComponentOutlet, ObservacionesEvaluadorComponent],
+  templateUrl: './contenedor-capitulo.component.html',
+  styleUrls: ['./contenedor-capitulo.component.css'],
+})
+export class ContenedorCapituloComponent {
+  protected readonly store = inject(DaexStore);
+
+  /**
+   * Capítulo que debe apilarse, sincronizado con la ruta.
+   *
+   * El valor por defecto cubre el montaje directo sin parámetro; la ruta
+   * `/formulario-iga/:capituloId` lo sobrescribe en cuanto resuelve.
+   */
+  readonly capituloId = input<string>('1');
+
+  /**
+   * Catálogo de microcomponentes.
+   *
+   * Solo se registran aquí las fichas con pieza construida; el resto de
+   * secciones del expediente se resuelve más adelante. Mantener el catálogo
+   * como dato local y no en el store evita que la capa de estado dependa de
+   * clases de componente: el store sigue ignorando la capa visual.
+   */
+  protected readonly catalogo = signal<readonly MicroSeccionConfig[]>([
+    { id: '1.1', capituloId: '1', componenteRef: IdentificacionComponent, visible: true },
+    { id: '1.2', capituloId: '1', componenteRef: NotificacionComponent, visible: true },
+    { id: '1.3', capituloId: '1', componenteRef: AdjuntarDocumentosComponent, visible: true },
+    { id: '2.1', capituloId: '2', componenteRef: DatosProyectoComponent, visible: true },
+    { id: '2.2', capituloId: '2', componenteRef: AntecedentesComponent, visible: true },
+    { id: '2.3', capituloId: '2', componenteRef: ObjetivosComponent, visible: true },
+    { id: '2.4', capituloId: '2', componenteRef: LocalizacionComponent, visible: true },
+    { id: '2.5', capituloId: '2', componenteRef: DelimitacionComponent, visible: true },
+    { id: '2.6', capituloId: '2', componenteRef: CronogramaComponent, visible: true },
+    { id: '2.7', capituloId: '2', componenteRef: ComponentesComponent, visible: true },
+    { id: '2.8', capituloId: '2', componenteRef: DemandaAguaComponent, visible: true },
+    {
+      id: '2.9',
+      capituloId: '2',
+      componenteRef: InsumosEquiposComponent,
+      visible: true,
+    },
+    {
+      id: '2.10',
+      capituloId: '2',
+      componenteRef: PersonalComponent,
+      visible: true,
+    },
+    { id: '2.11', capituloId: '2', componenteRef: AdjuntarDocumentosComponent, visible: true },
+    { id: '3.1', capituloId: '3', componenteRef: MedioFisicoComponent, visible: true },
+    { id: '3.2', capituloId: '3', componenteRef: AdjuntarDocumentosComponent, visible: true },
+    { id: '3.3', capituloId: '3', componenteRef: ArqueologiaComponent, visible: true },
+    { id: '5.2.1', capituloId: '5', componenteRef: DelimitacionMapaComponent, visible: true },
+    { id: '5.2.2', capituloId: '5', componenteRef: DelimitacionMapaComponent, visible: true },
+    { id: '5.3', capituloId: '5', componenteRef: AdjuntarDocumentosComponent, visible: true },
+    { id: '6.2', capituloId: '6', componenteRef: AdjuntarDocumentosComponent, visible: true },
+    { id: '7.1', capituloId: '7', componenteRef: AdjuntarDocumentosComponent, visible: true },
+  ]);
+
+  /**
+   * Fichas del capítulo activo, en el orden del catálogo.
+   *
+   * `visible` se filtra aquí y no en el `@for` para que el estado vacío del
+   * contenedor signifique «este capítulo todavía no tiene piezas», que es un
+   * mensaje útil, y no «hay fichas pero están ocultas».
+   */
+  protected readonly microSecciones = computed(() =>
+    this.catalogo().filter((ficha) => ficha.visible && ficha.capituloId === this.capituloId()),
+  );
+
+  constructor() {
+    // La ruta es la fuente de verdad del capítulo: al resolverla se propaga al
+    // store para que el índice lateral marque el capítulo y lo despliegue.
+    effect(() => this.store.seleccionarCapitulo(this.capituloId()));
+  }
+}

@@ -1,0 +1,92 @@
+@reference '../../../../../styles.css';
+
+.tarjeta {
+  @apply w-full bg-white border border-slate-200/80 rounded-2xl p-8;
+  box-shadow: 0 8px 30px rgb(15 23 42 / 0.04);
+}
+
+.cabecera {
+  @apply border-b border-slate-100 pb-4;
+}
+
+.etiqueta {
+  /*@apply text-xs font-bold text-amber-600 uppercase tracking-wider block mb-1;*/
+  @apply mb-1.5 block text-[10px] font-bold tracking-[0.18em] text-slate-500 uppercase;
+}
+
+.titulo {
+  @apply text-xl font-black text-slate-900 tracking-tight;
+}
+
+.bajada {
+  @apply text-xs text-slate-400 mt-1 font-medium;
+}
+
+/* --------------------------------------------------------------------
+   ALINEACIÓN DE LA GRILLA TÉCNICA
+
+   Este, Norte, zona y poblado comparten la misma caja de altura para que la
+   fila se lea como una banda y no como cuatro campos sueltos de distinto
+   grosor. `h-10` con relleno en bloque y caja `border-box` fija el alto con
+   independencia del contenido.
+
+   La clase va sobre el propio control, así que el foco se dispara con
+   `:focus`: envolverla en un contenedor obligaría a quitar el borde interno
+   para evitar dos cajas superpuestas.
+   ------------------------------------------------------------------ */
+.campo-cordenada {
+  @apply h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold font-mono text-slate-900 shadow-inner transition-all duration-300;
+}
+
+.campo-cordenada:focus {
+  @apply border-amber-500 bg-white outline-none;
+  box-shadow:
+    inset 0 2px 4px rgb(15 23 42 / 0.04),
+    0 0 0 4px rgb(245 158 11 / 0.1);
+}
+
+/* El campo de texto no lleva cifras: la monoespaciada se reserva para las
+   columnas de coordenadas y para la zona, que se comparan dígito a dígito. */
+.campo-cordenada--texto {
+  @apply font-medium;
+}
+
+/* Los spinsteps nativos desalinean la retícula de las columnas numéricas. */
+.campo-cordenada[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+/* --------------------------------------------------------------------
+   PISTA DE RANGO
+
+   El botón se apaga cuando una coordenada sale del envelope peruano. Un
+   botón muerto sin explicación se lee como un formulario roto, así que la
+   pista declara el rango admitido y se pinta en rojo cuando se incumple.
+   ------------------------------------------------------------------ */
+.pista {
+  @apply mt-1.5 text-[11px] font-medium text-slate-400;
+}
+
+.pista--error {
+  @apply text-red-500 font-bold;
+}
+
+.marco-tabla table {
+  @apply tabular-nums;
+}
+
+.aviso-guardado {
+  @apply mt-4 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 rounded-lg px-3 py-2;
+}
+
+.boton-oro {
+  @apply inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-4 py-2.5 text-xs font-black tracking-wider text-slate-950 uppercase transition-all duration-300 disabled:cursor-not-allowed disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 disabled:text-slate-500;
+  box-shadow: 0 4px 20px rgb(245 158 11 / 0.3);
+}

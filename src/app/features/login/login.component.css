@@ -1,0 +1,99 @@
+@reference "../../../styles.css";
+
+/* ========================================================================
+   EXTRANET-MEM · LOGIN PREMIUM · MODO CLARO INSTITUCIONAL
+   Contraste nítido sobre gris ultra claro. Acabados de cristal satinado,
+   malla técnica clara y acento dorado mineral MINEM.
+   ======================================================================== */
+
+/* --------------------------------------------------------------------
+   PANEL IZQUIERDO · Fondo claro tecnológico, malla y brillo dorado
+   ------------------------------------------------------------------ */
+
+.panel-inmersion {
+  @apply absolute inset-0 border-r border-slate-200/80 bg-gradient-to-br from-slate-100 via-slate-50 to-red-50/30;
+}
+
+.malla-tecnica {
+  @apply absolute inset-0 opacity-40;
+  background-image:
+    linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+    linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, #000 70%, transparent 100%);
+  mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, #000 70%, transparent 100%);
+}
+
+/* Sobre fondo claro el oro necesita más densidad para seguir siendo visible. */
+.glow-dorado {
+  @apply absolute top-[-50px] left-[-50px] h-[400px] w-[400px] animate-pulse rounded-full bg-amber-400/20 blur-[120px];
+}
+
+.bloque-evaluacion {
+  @apply mt-8 max-w-xl border-l-4 border-amber-500 pl-5 text-sm font-medium leading-relaxed text-slate-700;
+}
+
+/* --------------------------------------------------------------------
+   PANEL DERECHO · Tarjeta de cristal satinado sobre fondo claro
+   ------------------------------------------------------------------ */
+
+.tarjeta-vidrio {
+  @apply w-full max-w-md rounded-2xl border border-slate-200/60 bg-white/80 p-8 backdrop-blur-xl;
+  box-shadow:
+    0 20px 50px rgb(15 23 42 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 1);
+}
+
+.etiqueta-campo {
+  @apply mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-800;
+}
+
+/* --------------------------------------------------------------------
+   CAMPOS DE ENTRADA DE ALTA VISIBILIDAD
+   ------------------------------------------------------------------ */
+
+.campo-alta-precision {
+  @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 font-mono font-bold text-slate-900 transition-all duration-300 placeholder-slate-400;
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.05);
+}
+
+/* Dentro de `:focus` no se usan variantes `focus:`: el estado ya está activo. */
+.campo-alta-precision:focus {
+  @apply border-amber-500 bg-white outline-none;
+  box-shadow:
+    0 0 0 4px rgb(245 158 11 / 0.1),
+    0 4px 12px rgb(245 158 11 / 0.08);
+}
+
+.campo-alta-precision:disabled {
+  @apply cursor-not-allowed bg-slate-100 text-slate-400;
+}
+
+/* La asistencia del RUC manda sobre el estado base y sobre el foco. */
+.campo-alta-precision.campo-error,
+.campo-alta-precision.campo-error:focus {
+  @apply border-red-500 bg-white;
+  box-shadow:
+    0 0 0 4px rgb(239 68 68 / 0.12),
+    inset 0 1px 3px rgb(0 0 0 / 0.05);
+}
+
+/* --------------------------------------------------------------------
+   ALERTA DINÁMICA DEL RUC
+   ------------------------------------------------------------------ */
+
+.alerta-ruc {
+  @apply mt-3 flex animate-fade-in items-center gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-xs font-bold text-red-600;
+}
+
+/* --------------------------------------------------------------------
+   CONMUTADOR DE VISIBILIDAD DE CONTRASEÑA
+   ------------------------------------------------------------------ */
+
+.conmutador-ojo {
+  @apply absolute top-1/2 right-3 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition-colors duration-200 hover:text-amber-600 focus:text-amber-600 focus:outline-none;
+}
+
+.conmutador-ojo:disabled {
+  @apply cursor-not-allowed opacity-50;
+}

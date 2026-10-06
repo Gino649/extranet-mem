@@ -1,0 +1,170 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTANDAR DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Cronograma e Inversión del Proyecto' }}</h1>
+    <p class="bajada">
+      Etapas encadenadas con su inversión asociada. La planificación de personal de la sección 2.10
+      se sincroniza con las etapas activas de este cronograma.
+    </p>
+  </div>
+
+  <!-- INDICADORES GLOBALES, RECALCULADOS EN CALIENTE AL EDITAR -->
+  <div class="resumen">
+    <div>
+      <span class="etiqueta-mini">Duración Total</span>
+      <span class="dato">{{ duracionTotal() }} meses</span>
+    </div>
+    <div>
+      <span class="etiqueta-mini">Inversión Total</span>
+      <span class="dato dato-oro">S/ {{ inversionTotal() | number: '1.0-0' }}</span>
+    </div>
+    <div>
+      <span class="etiqueta-mini">Etapas Configuradas</span>
+      <span class="dato">{{ listaEtapas().length }}</span>
+    </div>
+    <div>
+      <span class="etiqueta-mini">Termina En</span>
+      <span class="dato">{{ formatarFechaAnioMes(fechaFinProyecto()) }}</span>
+    </div>
+  </div>
+
+  <!-- ============ GANTT CON FECHAS CALENDARIO Y EDICIÓN EN LÍNEA ============ -->
+  <div class="mt-5 overflow-x-auto">
+    <div class="gantt min-w-[54rem]">
+      <div class="gantt-fila gantt-fila--cabecera">
+        <span class="etiqueta-mini">Etapa</span>
+        <span class="etiqueta-mini">Meses · F. Inicio · F. Fin</span>
+        <span class="etiqueta-mini">Cronograma</span>
+        <span class="etiqueta-mini text-right">Inversión</span>
+      </div>
+
+      @for (etapa of listaEtapas(); track etapa.id) {
+        <div class="gantt-fila">
+          <!-- Etapa y botón de edición temporal -->
+          <div class="celda-etapa">
+            <div class="flex items-start gap-2">
+              <button
+                type="button"
+                class="boton-editar"
+                [attr.aria-pressed]="etapa.editando"
+                [attr.aria-label]="'Editar parámetros de ' + etapa.nombre"
+                (click)="alternarEdicionEtapa(etapa.id)"
+              >
+                {{ etapa.editando ? '✓' : '✏️' }}
+              </button>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-slate-800">{{ etapa.nombre }}</p>
+                <p class="text-[11px] text-slate-400">{{ etapa.hito }}</p>
+                @if (etapa.dependeDe.length > 0) {
+                  <p class="text-[10px] text-slate-400">
+                    Precede: {{ etapa.dependeDe.join(', ') }}
+                  </p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Duración en meses y fechas calendario -->
+          <div class="celda-cronologia">
+            <div class="campo">
+              <span class="etiqueta-campo">Meses</span>
+              @if (etapa.editando) {
+                <input
+                  type="number"
+                  class="inline-input"
+                  min="1"
+                  [max]="240"
+                  [value]="etapa.meses"
+                  [attr.aria-label]="'Meses de ' + etapa.nombre"
+                  (input)="editarMeses(etapa.id, $any($event.target).value)"
+                />
+              } @else {
+                <span class="valor-campo">{{ etapa.meses }}m</span>
+              }
+            </div>
+
+            <div class="campo">
+              <span class="etiqueta-campo">F. Inicio</span>
+              @if (etapa.editando && esAncla(etapa)) {
+                <input
+                  type="month"
+                  class="inline-input"
+                  [value]="fechaInicioDe(etapa)"
+                  [attr.aria-label]="'Mes de inicio del cronograma'"
+                  (change)="editarFechaInicio(etapa.id, $any($event.target).value)"
+                />
+              } @else {
+                <span
+                  class="fecha-pill"
+                  [title]="esAncla(etapa) ? 'Mes de arranque' : 'Derivada del cronograma'"
+                >
+                  {{ formatarFechaAnioMes(fechaInicioDe(etapa)) }}
+                </span>
+              }
+            </div>
+
+            <div class="campo">
+              <span class="etiqueta-campo">F. Fin</span>
+              <span class="fecha-pill fecha-pill--fin">
+                {{ formatarFechaAnioMes(fechaFinDe(etapa)) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Barra del Gantt -->
+          <div class="celda-gantt">
+            <div class="gantt-pista">
+              <div
+                class="gantt-barra"
+                [style.left.%]="desplazamiento(etapa)"
+                [style.width.%]="ancho(etapa)"
+                [attr.title]="
+                  etapa.nombre +
+                  ' · ' +
+                  formatarFechaAnioMes(fechaInicioDe(etapa)) +
+                  ' a ' +
+                  formatarFechaAnioMes(fechaFinDe(etapa))
+                "
+              >
+                <span class="text-[9px] font-black text-slate-950">{{ etapa.meses }}m</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inversión: editable en línea o en lectura -->
+          <div class="celda-inversion">
+            @if (etapa.editando) {
+              <div class="inline-caja">
+                <span class="inline-prefijo">S/</span>
+                <input
+                  type="number"
+                  class="inline-input inline-input-dinero"
+                  min="0"
+                  [max]="1000000000"
+                  placeholder="0"
+                  [value]="etapa.inversion"
+                  [attr.aria-label]="'Inversión de ' + etapa.nombre"
+                  (input)="editarInversion(etapa.id, $any($event.target).value)"
+                />
+              </div>
+            } @else {
+              <span class="text-right font-mono text-xs font-black text-slate-800">
+                {{ formatearInversion(etapa.inversion) }}
+              </span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="acciones">
+    @if (mensaje(); as aviso) {
+      <p class="aviso">{{ aviso }}</p>
+    }
+    <button type="button" class="boton-oro" [disabled]="!sinCiclos()" (click)="confirmar()">
+      Validar cronograma
+    </button>
+  </div>
+</section>

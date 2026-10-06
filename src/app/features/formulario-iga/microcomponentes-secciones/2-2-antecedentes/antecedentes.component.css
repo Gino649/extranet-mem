@@ -1,0 +1,55 @@
+@reference '../../../../../styles.css';
+
+.tarjeta {
+  @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm;
+}
+
+.cabecera {
+  @apply mb-5 border-b border-slate-100 pb-3;
+}
+
+.etiqueta {
+  @apply mb-1.5 block text-[10px] font-bold tracking-[0.18em] text-slate-500 uppercase;
+}
+
+.titulo {
+  @apply text-lg font-bold text-slate-900;
+}
+
+.bajada {
+  @apply mt-1 max-w-2xl text-sm leading-relaxed text-slate-500;
+}
+
+/* --------------------------------------------------------------------
+   DENSIDAD DE LA MATRIZ · Consola analítica georreferenciada
+
+   Los códigos de concesión y los números de expediente son identificadores
+   que el técnico compara dígito a dígito contra el plano. La columna de
+   participación es la única magnitud y va alineada a la derecha para que
+   los porcentajes formen columna sin leerlos uno por uno.
+
+   `tabular-nums` evita que la fuente con cifras de ancho variable desplace
+   la retícula al pasar de 45% a 100%.
+   ------------------------------------------------------------------ */
+.marco-tabla table {
+  @apply tabular-nums;
+}
+
+/* --------------------------------------------------------------------
+   ESTILO DE SUPERPOSICIÓN · Cruce catastral que exige análisis
+
+   El sombreado rojo del enunciado es demasiado tenue para verse en un
+   panel blanco, así que la fila superpuesta se marca por dos vías a la
+   vez: un filo rojo a la izquierda y un lavado que sí se distingue.
+
+   La fila no usa `bg-red-50/[0.02]` porque ese alfa es invisible en
+   pantalla; se sube a 0.04 y se apoya en el filo rojo, que sí registra
+   la señal aunque el lavado pase desapercibido.
+   ------------------------------------------------------------------ */
+.fila-tercero {
+  @apply bg-red-50/[0.04] shadow-[inset_3px_0_0_0_var(--color-red-400)];
+}
+
+.fila-tercero:last-child {
+  @apply border-b-0;
+}

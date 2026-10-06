@@ -1,0 +1,105 @@
+@reference '../../../../../styles.css';
+
+/* --------------------------------------------------------------------
+   CONTRASTE DE SOLO CONSULTA · La data maestra se lee, no se edita
+
+   El fondo apagado va en el marcado (`bg-slate-50/60`) para que la
+   diferencia con los campos editables se lea en el template. Aquí solo
+   queda lo que no se expresa con una clase: el bloque no admite
+   selección de texto, porque nada en él es editable.
+   ------------------------------------------------------------------ */
+.data-maestra {
+  @apply select-none;
+}
+
+/* --------------------------------------------------------------------
+   CAMPOS NUMÉRICOS · Una sola caja para el dato y su adorno
+
+   El enunciado pedía el borde en el `input` y el adorno en un envoltorio
+   `relative`. Eso deja dos cajas superpuestas: el borde del input se
+   dibuja por dentro del radio del envoltorio y el prefijo `$` o el
+   sufijo `Meses` queda pegado a un borde que no es el que se ve.
+
+   Aquí el envoltorio es el dueño del borde, el radio y el foco, y el
+   input entra sin marco. Una única caja, un único anillo de foco, y las
+   dos columnas quedan a la misma altura porque los inputs comparten
+   relleno vertical.
+
+   El foco se dispara con `focus-within`, no con `focus`: el input ya no
+   es el elemento con foco visual, lo es su contenedor.
+   ------------------------------------------------------------------ */
+
+.tarjeta {
+  @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm;
+}
+
+.etiqueta {
+  @apply mb-1.5 block text-[10px] font-bold tracking-[0.18em] text-slate-500 uppercase;
+}
+
+.etiqueta-mini {
+  @apply text-[10px] font-bold tracking-wider text-slate-400 uppercase;
+}
+
+.titulo {
+  @apply text-lg font-bold text-slate-900;
+}
+
+.bajada {
+  @apply mt-1 max-w-2xl text-sm leading-relaxed text-slate-500;
+}
+
+.campo-adornado {
+  @apply relative rounded-xl bg-white shadow-inner transition-all duration-300;
+  border: 1px solid var(--color-slate-200);
+
+  &:focus-within {
+    border-color: var(--color-amber-500);
+    box-shadow:
+      inset 0 2px 4px rgb(15 23 42 / 0.04),
+      0 0 0 4px rgb(245 158 11 / 0.1);
+  }
+}
+
+.campo-adornado input {
+  @apply border-0 bg-transparent shadow-none focus:ring-0;
+}
+
+/* Prefijo y sufijo se reparten el mismo eje vertical que la caja. */
+.adorno {
+  @apply pointer-events-none absolute inset-y-0 flex items-center font-bold text-slate-400 text-xs;
+}
+
+.adorno-izquierdo {
+  @apply left-0 pl-4 font-mono;
+}
+
+.adorno-derecho {
+  @apply right-0 pr-4 font-sans text-[10px] uppercase tracking-wider;
+}
+
+/* Los inputs nativos pintan sus propios spinsteps, que rompen la
+   retícula junto al sufijo. Se ocultan; el paso por teclado sigue
+   disponible y el usuario puede escribir el valor directamente. */
+.campo-adornado input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+/* --------------------------------------------------------------------
+   ACUSE DE RECIBO · Confirma el guardado sin robarle el foco al titular
+   ------------------------------------------------------------------ */
+.aviso-guardado {
+  @apply text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 rounded-lg px-3 py-2;
+}
+
+.boton-oro {
+  @apply inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-4 py-2.5 text-xs font-black tracking-wider text-slate-950 uppercase transition-all duration-300 disabled:cursor-not-allowed disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 disabled:text-slate-500;
+  box-shadow: 0 4px 20px rgb(245 158 11 / 0.3);
+}

@@ -1,0 +1,65 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR OBLIGATORIA DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección 3.1</p>
+    <h1 class="titulo">Descripción del Medio Físico y Biológico</h1>
+    <p class="bajada">
+      Describa detalladamente los componentes ambientales del área de estudio (suelo, geología, flora y fauna). Puede estructurar el texto e importar tablas directamente desde Microsoft Excel.
+    </p>
+  </div>
+
+  <!-- CUERPO DEL EDITOR WYSIWYG PREMIUM -->
+  <div class="mt-6 border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden flex flex-col">
+    
+    <!-- BARRA DE HERRAMIENTAS BÁSICAS (TOOLBAR EXCLUSIVO MODO CLARO) -->
+    <div class="bg-slate-50 border-b border-slate-200 p-2 flex flex-wrap gap-1 items-center select-none">
+      <!-- Formato de Texto -->
+      <button type="button" (click)="ejecutarComandoEditor('bold')" class="btn-toolbar-wysiwyg" title="Negrita"><b>B</b></button>
+      <button type="button" (click)="ejecutarComandoEditor('italic')" class="btn-toolbar-wysiwyg" title="Cursiva"><i>I</i></button>
+      <button type="button" (click)="ejecutarComandoEditor('underline')" class="btn-toolbar-wysiwyg" title="Subrayado"><u>U</u></button>
+      
+      <div class="h-4 w-[1px] bg-slate-200 mx-1"></div>
+      
+      <!-- Alineación -->
+      <button type="button" (click)="ejecutarComandoEditor('justifyLeft')" class="btn-toolbar-wysiwyg" title="Alinear a la izquierda">⬅</button>
+      <button type="button" (click)="ejecutarComandoEditor('justifyCenter')" class="btn-toolbar-wysiwyg" title="Centrar">📇</button>
+      <button type="button" (click)="ejecutarComandoEditor('justifyRight')" class="btn-toolbar-wysiwyg" title="Alinear a la derecha">➡</button>
+      
+      <div class="h-4 w-[1px] bg-slate-200 mx-1"></div>
+      
+      <!-- Listas y Tablas -->
+      <button type="button" (click)="ejecutarComandoEditor('insertUnorderedList')" class="btn-toolbar-wysiwyg" title="Lista con viñetas">•=</button>
+      <button type="button" (click)="ejecutarComandoEditor('insertOrderedList')" class="btn-toolbar-wysiwyg" title="Lista numerada">1=</button>
+      <button type="button" (click)="inyectarTablaVaciaManual()" class="btn-toolbar-wysiwyg text-[10px] font-black" title="Inyectar Matriz de Tabla">📊 +TABLA</button>
+    </div>
+
+    <!-- ÁREA EDITABLE CONTENEDORA (CONTENTEDITABLE NATIVO DE ALTA PRECISIÓN) -->
+    <!-- Captura el evento paste para sanitizar y formatear las celdas de Excel en caliente -->
+    <div 
+      #lienzoEditable
+      contenteditable="true"
+      (blur)="actualizarContenidoDesdeLienzo()"
+      (paste)="alPegarContenidoDesdeExcel($event)"
+      class="w-full min-h-[350px] p-6 text-slate-800 text-xs font-medium focus:outline-none overflow-y-auto bg-slate-50/10 custom-editor-content"
+      placeholder="Redacte la línea base ambiental o pegue directamente los cuadros de datos copiados de su hoja de cálculo Excel aquí..."
+    ></div>
+
+    <!-- Indicador de Caracteres e Historial al Pie -->
+    <div class="bg-slate-50 border-t border-slate-100 px-4 py-2 flex justify-between items-center text-[10px] font-bold text-slate-400 select-none">
+      <span>Soporte Nativo: Formato HTML Corporativo / Tablas CSS</span>
+      <span class="font-mono">Longitud: {{ conteoCaracteresHtml() }} bytes</span>
+    </div>
+  </div>
+
+  <!-- Botonera de Validación de la Sección -->
+  <div class="pt-4 mt-6 flex justify-end border-t border-slate-100">
+    <button
+      type="button"
+      (click)="guardarYValidarMedioFisicoSeccion()"
+      [disabled]="!contenidoEsValido()"
+      class="boton-validar"
+    >
+      Guardar y Validar Sección 3.1
+    </button>
+  </div>
+</section>

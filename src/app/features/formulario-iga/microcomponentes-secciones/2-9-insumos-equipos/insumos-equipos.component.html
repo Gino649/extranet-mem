@@ -1,0 +1,444 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR OBLIGATORIA DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección 2.9</p>
+    <h1 class="titulo">Insumos, Maquinarias y Equipos</h1>
+    <p class="bajada">
+      Declare el inventario técnico de insumos químicos, herramientas, maquinarias y equipos pesados
+      asignados a las labores de exploración de la DAEX.
+    </p>
+  </div>
+
+  <div class="space-y-8 mt-6">
+    <!-- ========================================================== -->
+    <!-- GRILLA 1: INSUMOS (MODO LECTURA LIMPIO)                     -->
+    <!-- ========================================================== -->
+    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div>
+          <h5
+            class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <span>🧪</span> Matriz de Insumos Químicos y Materiales
+          </h5>
+          <!-- Los subtotales van por unidad y no un total único: 40 galones
+               y 200 kilogramos no son magnitudes comparables. -->
+          <p class="contador-bloque text-[10px] text-amber-600 font-bold uppercase mt-0.5">
+            @if (resumenInsumos().length > 0) {
+              {{ insumos().length }} insumo(s) ·
+              @for (par of resumenInsumos(); track par.unidad; let ultimo = $last) {
+                <span class="subtotal-unidad"
+                  >{{ par.total | number }} {{ par.unidad }}{{ ultimo ? '' : ' ·' }}</span
+                >
+              }
+            } @else {
+              Sin insumos declarados
+            }
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="abrirModalInsumo(null)"
+          class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-lg text-xs tracking-wide uppercase transition-all shadow-sm cursor-pointer"
+        >
+          ＋ Nuevo Insumo
+        </button>
+      </div>
+
+      <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+        <table class="w-full text-left text-xs border-collapse min-w-[720px]">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px] select-none"
+            >
+              <th class="p-3 w-12 text-center">N°</th>
+              <th class="p-3">Insumos / Descripción Técnica</th>
+              <th class="p-3 w-32 text-center">Cantidad</th>
+              <th class="p-3 w-44">Unidad de Medida</th>
+              <th class="p-3 w-36 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ins of insumos(); track ins.id; let i = $index) {
+              <tr
+                class="border-b border-slate-100 bg-white hover:bg-slate-50/40 transition-colors font-medium"
+              >
+                <td class="p-3 text-slate-400 font-mono font-bold text-center select-none">
+                  {{ i + 1 }}
+                </td>
+                <td class="p-3 font-bold text-slate-900">{{ ins.nombre }}</td>
+                <td class="p-3 font-mono font-bold text-center text-slate-800 cantidad-insumo">
+                  {{ ins.cantidad | number }}
+                </td>
+                <td class="p-3 text-slate-600 font-semibold uppercase text-[11px] text-center">
+                  {{ ins.unidadMedida }}
+                </td>
+                <td class="p-3 text-center space-x-1">
+                  <button
+                    type="button"
+                    (click)="abrirModalInsumo(ins)"
+                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="removerInsumo(ins.id)"
+                    class="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✕ Eliminar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="p-5 text-center text-slate-400 font-medium bg-white">
+                  No hay insumos declarados. Presione "Nuevo Insumo" para registrar.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- GRILLA 2: EQUIPOS Y MAQUINARIAS (MODO LECTURA LIMPIO)       -->
+    <!-- ========================================================== -->
+    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div>
+          <h5
+            class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5"
+          >
+            <span>🏗️</span> Matriz de Equipos y Maquinarias Pesadas
+          </h5>
+          <p class="contador-bloque text-[10px] text-amber-600 font-bold uppercase mt-0.5">
+            {{ equipos().length }} equipo(s) ·
+            <span class="subtotal-unidad">{{ totalEquipos() | number }} unidad(es)</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="abrirModalEquipo(null)"
+          class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-lg text-xs tracking-wide uppercase transition-all shadow-sm cursor-pointer"
+        >
+          ＋ Nuevo Equipo
+        </button>
+      </div>
+
+      <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+        <table class="w-full text-left text-xs border-collapse min-w-[820px]">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px] select-none"
+            >
+              <th class="p-3 w-12 text-center">N°</th>
+              <th class="p-3 w-64">Equipo / Maquinaria</th>
+              <th class="p-3">Especificaciones Técnicas / Capacidad</th>
+              <th class="p-3 w-32 text-center">Cantidad</th>
+              <th class="p-3 w-36 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (eq of equipos(); track eq.id; let i = $index) {
+              <tr
+                class="border-b border-slate-100 bg-white hover:bg-slate-50/40 transition-colors font-medium"
+              >
+                <td class="p-3 text-slate-400 font-mono font-bold text-center select-none">
+                  {{ i + 1 }}
+                </td>
+                <td class="p-3 font-bold text-slate-900">{{ eq.nombre }}</td>
+                <td class="p-3 text-slate-600 font-medium leading-relaxed">
+                  {{ eq.especificaciones }}
+                </td>
+                <td class="p-3 font-mono font-bold text-center text-slate-800 cantidad-equipo">
+                  {{ eq.cantidad | number }}
+                </td>
+                <td class="p-3 text-center space-x-1">
+                  <button
+                    type="button"
+                    (click)="abrirModalEquipo(eq)"
+                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="removerEquipo(eq.id)"
+                    class="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✕ Eliminar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="p-5 text-center text-slate-400 font-medium bg-white">
+                  No hay equipos o maquinarias declaradas. Presione "Nuevo Equipo" para registrar.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botonera de Validación de la Sección -->
+  <div class="acciones">
+    <!-- El aviso de la última acción y el motivo de bloqueo son dos cosas
+         distintas: uno dice lo que acaba de pasar, el otro lo que falta. Se
+         muestran juntos para que un mensaje no tape al otro. -->
+    <div class="flex-1">
+      @if (mensaje(); as aviso) {
+        <p class="aviso">{{ aviso }}</p>
+      }
+      @if (bloqueo(); as pendiente) {
+        <p class="pendiente">{{ pendiente }}</p>
+      } @else {
+        <p class="pendiente pendiente--lista">Inventario listo para validar.</p>
+      }
+    </div>
+    <button
+      type="button"
+      (click)="guardarYValidarInsumosSeccion()"
+      [disabled]="!seccionValida()"
+      class="boton-validar"
+    >
+      Guardar y Validar Sección 2.9
+    </button>
+  </div>
+</section>
+
+<!-- ========================================================== -->
+<!-- POPUP 1: FORMULARIO MODAL REGISTRO DE INSUMO               -->
+<!-- ========================================================== -->
+@if (modalInsAbierto()) {
+  <div
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-modal-insumo"
+  >
+    @if (modalInsData(); as datos) {
+      <div
+        class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-md animate-zoom-in"
+      >
+        <!-- Cabecera del Popup -->
+        <div
+          class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 select-none"
+        >
+          <h4
+            id="titulo-modal-insumo"
+            class="text-xs font-black text-slate-900 uppercase tracking-tight"
+          >
+            {{ modalInsEsEdicion() ? 'Editar Insumo / Material' : 'Datos del Insumo / Material' }}
+          </h4>
+          <button
+            type="button"
+            (click)="cerrarModalInsumo()"
+            aria-label="Cerrar"
+            class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs font-bold text-slate-700">
+          <div>
+            <label
+              for="modal-ins-nombre"
+              class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+            >
+              Descripción del Insumo *
+            </label>
+            <input
+              id="modal-ins-nombre"
+              type="text"
+              placeholder="Ej. Bentonita en polvo / Grasas de perforación"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-bold shadow-inner"
+              [ngModel]="datos.nombre"
+              (ngModelChange)="editarBorradorIns('nombre', $event)"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                for="modal-ins-cantidad"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                Cantidad Requerida *
+              </label>
+              <input
+                id="modal-ins-cantidad"
+                type="number"
+                placeholder="0"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+                [ngModel]="datos.cantidad"
+                (ngModelChange)="editarCantidadIns($event)"
+              />
+            </div>
+            <div>
+              <label
+                for="modal-ins-unidad"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                Unidad de Medida *
+              </label>
+              <select
+                id="modal-ins-unidad"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500 shadow-inner"
+                [value]="datos.unidadMedida"
+                (change)="alElegirUnidad($event)"
+              >
+                <option value="" disabled>-- Seleccione --</option>
+                @for (unidad of unidades; track unidad.codigo) {
+                  <option [value]="unidad.codigo">{{ unidad.etiqueta }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botonera del Popup -->
+        <div class="pt-4 mt-6 border-t border-slate-100 flex justify-end gap-2 select-none">
+          @if (bloqueoModalIns(); as motivo) {
+            <p class="pendiente mr-auto">{{ motivo }}</p>
+          }
+          <button
+            type="button"
+            (click)="cerrarModalInsumo()"
+            class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="procesarGuardadoInsumoModal()"
+            [disabled]="!modalInsDataValido()"
+            class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-xl text-xs uppercase shadow-sm cursor-pointer disabled:from-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+          >
+            Grabar Insumo
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- ========================================================== -->
+<!-- POPUP 2: FORMULARIO MODAL REGISTRO DE EQUIPO              -->
+<!-- ========================================================== -->
+@if (modalEqAbierto()) {
+  <div
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-modal-equipo"
+  >
+    @if (modalEqData(); as datos) {
+      <div
+        class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-lg animate-zoom-in"
+      >
+        <!-- Cabecera del Popup -->
+        <div
+          class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 select-none"
+        >
+          <h4
+            id="titulo-modal-equipo"
+            class="text-xs font-black text-slate-900 uppercase tracking-tight"
+          >
+            {{
+              modalEqEsEdicion() ? 'Editar Equipo / Maquinaria' : 'Datos del Equipo / Maquinaria'
+            }}
+          </h4>
+          <button
+            type="button"
+            (click)="cerrarModalEquipo()"
+            aria-label="Cerrar"
+            class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs font-bold text-slate-700">
+          <div>
+            <label
+              for="modal-eq-nombre"
+              class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+            >
+              Equipo / Maquinaria *
+            </label>
+            <input
+              id="modal-eq-nombre"
+              type="text"
+              placeholder="Ej. Perforadora diamantina sobre orugas"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-bold shadow-inner"
+              [ngModel]="datos.nombre"
+              (ngModelChange)="editarBorradorEq('nombre', $event)"
+            />
+          </div>
+
+          <div>
+            <label
+              for="modal-eq-especificaciones"
+              class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+            >
+              Especificaciones Técnicas / Capacidad *
+            </label>
+            <textarea
+              id="modal-eq-especificaciones"
+              rows="3"
+              placeholder="Ej. Motor Diesel 150 HP, capacidad de perforación HQ hasta 600 metros de profundidad."
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none focus:border-amber-500 shadow-inner resize-none"
+              [ngModel]="datos.especificaciones"
+              (ngModelChange)="editarBorradorEq('especificaciones', $event)"
+            ></textarea>
+          </div>
+
+          <div>
+            <label
+              for="modal-eq-cantidad"
+              class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+            >
+              Cantidad de Unidades *
+            </label>
+            <input
+              id="modal-eq-cantidad"
+              type="number"
+              placeholder="1"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono font-black focus:outline-none focus:border-amber-500 shadow-inner"
+              [ngModel]="datos.cantidad"
+              (ngModelChange)="editarCantidadEq($event)"
+            />
+          </div>
+        </div>
+
+        <!-- Botonera del Popup -->
+        <div class="pt-4 mt-6 border-t border-slate-100 flex justify-end gap-2 select-none">
+          @if (bloqueoModalEq(); as motivo) {
+            <p class="pendiente mr-auto">{{ motivo }}</p>
+          }
+          <button
+            type="button"
+            (click)="cerrarModalEquipo()"
+            class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="procesarGuardadoEquipoModal()"
+            [disabled]="!modalEqDataValido()"
+            class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-xl text-xs uppercase shadow-sm cursor-pointer disabled:from-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+          >
+            Grabar Equipo
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}

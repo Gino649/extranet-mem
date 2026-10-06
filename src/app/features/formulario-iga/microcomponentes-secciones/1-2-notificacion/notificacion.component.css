@@ -1,0 +1,252 @@
+@reference '../../../../../styles.css';
+
+/* --------------------------------------------------------------------
+   TARJETA · Umbral bajo de ruido visual
+
+   Misma densidad que la 1.1: el marco cede protagonismo a los bloques
+   internos, porque el capítulo apila ambas fichas una debajo de otra.
+   ------------------------------------------------------------------ */
+.tarjeta {
+  @apply w-full rounded-2xl border border-slate-200/60 bg-white p-6;
+  box-shadow: 0 6px 24px rgb(15 23 42 / 0.03);
+}
+
+/* --------------------------------------------------------------------
+   CABECERA
+   ------------------------------------------------------------------ */
+.cabecera {
+  @apply mb-5 flex items-start gap-4 border-b border-slate-100 pb-3;
+}
+
+.etiqueta {
+  @apply mb-1 block text-[10px] font-bold tracking-[0.18em] text-slate-400 uppercase;
+}
+
+.titulo {
+  @apply text-sm font-black tracking-tight text-slate-800 uppercase;
+}
+
+.bajada {
+  @apply mt-1 text-[11px] font-medium text-slate-400;
+}
+
+.contador-contactos {
+  @apply shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase;
+}
+
+/* --------------------------------------------------------------------
+   BLOQUES · Tarjetas internas de borde ultra delgado
+   ------------------------------------------------------------------ */
+.bloque {
+  @apply rounded-xl border border-slate-200/60 bg-slate-50/60 p-5;
+}
+
+.bloque-cabecera {
+  @apply mb-3 flex flex-wrap items-center justify-between gap-3;
+}
+
+.bloque-titulo {
+  @apply flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-600 uppercase;
+}
+
+/* El bloque de evidencia es documental, no de Alertas: no lleva color ámbar. */
+.bloque-titulo--neutro {
+  @apply text-slate-700;
+}
+
+.bloque-nota {
+  @apply mt-0.5 text-[11px] font-medium text-slate-400;
+}
+
+.enlace-descarga {
+  @apply flex items-center gap-1 text-[11px] font-bold text-blue-600 underline transition-colors duration-200 hover:text-blue-700;
+}
+
+/* --------------------------------------------------------------------
+   GRILLA · Aspecto de matriz de control técnica
+
+   El borde lo aporta la celda, no el input: si cada campo pinta el suyo, la
+   tabla se lee como once cajas sueltas en vez de una rejilla. Por eso los
+   inputs van sin margen, sin fondo propio y con el radio del contenedor.
+   ------------------------------------------------------------------ */
+/*
+ * Marco desplazable en horizontal.
+ *
+ * Las columnas tienen anchos fijos y suman unos 500 px, así que en un panel
+ * estrecho la rejilla no cabe. `overflow-hidden` recortaba las celdas de la
+ * derecha sin dejar ninguna forma de alcanzarlas; `auto` las deja accesibles
+ * con barra. El ancho mínimo va en la tabla, no en el marco: si fuera del marco
+ * el contenedor se encogería por debajo del contenido en lugar de desbordarlo.
+ * Es el mismo patrón que usa el cronograma en la 2.6.
+ */
+.marco-tabla {
+  @apply overflow-x-auto rounded-xl border border-slate-200 bg-white;
+}
+
+.tabla {
+  @apply w-full min-w-[34rem] border-collapse text-left text-xs;
+}
+
+/* Encabezado plomo atenuado, en negrita para consolidar la jerarquía. */
+.tabla thead th {
+  @apply border-b border-slate-200 bg-slate-50 px-3 py-2.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase;
+}
+
+.col-orden {
+  @apply w-8;
+}
+
+.col-telefono {
+  @apply w-44;
+}
+
+.col-correo {
+  @apply w-64;
+}
+
+.col-accion {
+  @apply w-12 text-center;
+}
+
+.fila-contacto {
+  @apply border-b border-slate-100 transition-colors duration-200;
+}
+
+/*
+ * La fila a medias se marca con un filete ámbar tenue, no tiñendo el fondo de
+ * cada celda: marcar cuatro campos por separado multiplica el ruido visual.
+ */
+.fila-contacto--invalida {
+  @apply bg-amber-50/40;
+}
+
+.celda {
+  @apply p-1.5 align-middle;
+}
+
+.celda--orden {
+  @apply px-3 text-center text-xs font-bold text-slate-400;
+}
+
+.celda--accion {
+  @apply text-center;
+}
+
+.celda--vacia {
+  @apply px-3 py-6 text-center text-xs font-medium text-slate-400;
+}
+
+/* Campo de la celda: sin borde propio, se apoya en el de la celda. */
+.celda-input {
+  @apply w-full rounded-lg border border-transparent bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800 transition-colors duration-200 outline-none;
+}
+
+.celda-input::placeholder {
+  @apply text-slate-300;
+}
+
+/* El foco cambia el fondo pero no inventa un segundo borde alrededor. */
+.celda-input:hover {
+  @apply bg-slate-100;
+}
+
+.celda-input:focus {
+  @apply border-amber-500 bg-white;
+}
+
+.celda-input--mono {
+  @apply font-mono tracking-wider;
+}
+
+.boton-quitar {
+  @apply inline-flex size-7 cursor-pointer items-center justify-center rounded-lg text-xs font-bold text-slate-400 transition-all duration-200 hover:bg-red-50 hover:text-red-500;
+}
+
+/* --------------------------------------------------------------------
+   DETALLE DE ERRORES
+   ------------------------------------------------------------------ */
+.fila-detalle {
+  @apply border-b border-slate-100 bg-amber-50/40;
+}
+
+.celda-detalle {
+  @apply px-3 py-1.5;
+}
+
+.detalle-error {
+  @apply mr-3 text-[10px] font-semibold text-amber-700;
+}
+
+/* --------------------------------------------------------------------
+   BOTONERAS
+   ------------------------------------------------------------------ */
+.boton-agregar {
+  @apply inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:text-slate-900;
+}
+
+.boton-oro {
+  @apply cursor-pointer rounded-lg bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-4 py-2 text-xs font-black tracking-wider text-slate-950 uppercase transition-all duration-300;
+  box-shadow: 0 4px 16px rgb(245 158 11 / 0.2);
+}
+
+.boton-oro:hover:not(:disabled) {
+  @apply from-amber-600 to-yellow-700;
+  box-shadow: 0 6px 22px rgb(245 158 11 / 0.32);
+}
+
+.boton-oro:disabled {
+  @apply cursor-not-allowed from-slate-300 via-slate-300 to-slate-300 text-slate-500;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------
+   PIE
+   ------------------------------------------------------------------ */
+.pie {
+  @apply mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-slate-100 pt-4;
+}
+
+.pie-resumen {
+  @apply mr-auto text-[11px] font-medium text-slate-400;
+}
+
+.aviso {
+  @apply mr-auto text-xs font-bold text-emerald-700;
+}
+
+/*
+ * El estado se tiñe según el semáforo. La base es neutra a propósito: si el
+ * store devolviera una etiqueta desconocida, el rótulo se vería apagado en lugar
+ * de mentir con un verde que sugiere una sección ya confirmada.
+ */
+.estado {
+  @apply inline-flex items-center gap-1.5 text-xs font-bold text-slate-500;
+}
+
+.estado-punto {
+  @apply size-1.5 rounded-full bg-slate-300;
+}
+
+.estado--verde {
+  @apply text-emerald-700;
+}
+
+.estado--verde .estado-punto {
+  @apply bg-emerald-500;
+}
+
+.estado--azul {
+  @apply text-blue-700;
+}
+
+.estado--azul .estado-punto {
+  @apply bg-blue-500;
+}
+
+.estado--rojo {
+  @apply text-red-600;
+}
+
+.estado--rojo .estado-punto {
+  @apply bg-red-500;
+}

@@ -1,0 +1,223 @@
+<div class="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-800">
+  <!-- ================================================================
+       HEADER SUPERIOR FIJO · Metadatos inmutables del trámite
+       ================================================================ -->
+  <header class="cabecera">
+    <!--
+      El botón de escape y el rótulo del proyecto comparten columna porque la
+      cabecera reparte con `justify-between`: sueltos, el hueco caería entre
+      ellos y el título quedaría desalineado del borde izquierdo.
+    -->
+    <div class="flex min-w-0 items-center">
+      <!--
+        Vía de escape del formulario. Es una acción de navegación, no un dato,
+        así que precede al rótulo del expediente en lugar de acompañarlo. Por
+        debajo de 640 px solo sobrevive la flecha: el rótulo compete por el ancho
+        con el nombre del proyecto, que es el que sí necesita leerse entero.
+      -->
+      <button
+        type="button"
+        class="mr-4 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-200 hover:text-slate-900"
+        aria-label="Volver al listado de solicitudes"
+        (click)="regresarAlWorkspace()"
+      >
+        <span aria-hidden="true">←</span>
+        <span class="hidden sm:inline">Volver al Listado</span>
+      </button>
+
+      <div class="flex min-w-0 items-center gap-3">
+        <div
+          class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-yellow-600 text-xs font-black text-slate-950"
+        >
+          DGAAM
+        </div>
+        <div class="min-w-0">
+          <p class="truncate text-sm font-bold text-slate-900">
+            {{ store.formulario().nombreProyecto }}
+            <span class="mx-1 font-normal text-slate-300">|</span>
+            {{ store.formulario().unidadMinera }} - {{ store.formulario().tipoIga }}
+          </p>
+          <p class="truncate text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            @if (store.formulario().numeroExpediente) {
+              Expediente {{ store.formulario().numeroExpediente }}
+            } @else {
+              Expediente en registro · aún sin número asignado
+            }
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex shrink-0 items-center gap-4">
+      <div class="hidden text-right sm:block">
+        <p class="text-[10px] font-black tracking-[0.18em] text-slate-500 uppercase">
+          Avance del expediente
+        </p>
+        <div class="mt-1.5 flex items-center gap-2.5">
+          <div class="barra-avance--riel">
+            <div class="barra-avance" [style.width.%]="avance()"></div>
+          </div>
+          <span class="text-xs font-black text-slate-800 tabular-nums">{{ avance() }}%</span>
+        </div>
+      </div>
+
+      <span class="hidden text-xs text-slate-500 md:inline">
+        Titular: <strong class="text-slate-800">{{ iniciales() }}</strong>
+      </span>
+
+      <!--
+        El rótulo y el bloqueo dependen de la etapa del trámite, así que se
+        resuelven en el store. El `title` solo lleva la explicación cuando el
+        botón está bloqueado: un tooltip que aparece para decir «puedes» molesta
+        más de lo que informa.
+      -->
+      <button
+        type="button"
+        class="boton-envio"
+        [class.boton-envio--bloqueado]="!puedeRemitir()"
+        [disabled]="!puedeRemitir()"
+        [attr.title]="motivoRemision()"
+        (click)="enviarAlMinem()"
+      >
+        📨 {{ etiquetaRemision() }}
+      </button>
+    </div>
+  </header>
+
+  <!-- ================================================================
+       CUERPO · Índice de 7 capítulos + scroll del orquestador
+
+       El alto no se escribe en ninguna regla: la raíz es `h-screen
+       overflow-hidden` y este contenedor es `flex-1 min-h-0`, de modo que el
+       reparto entre cabecera, cuerpo y pie lo resuelve el flexbox. Antes el
+       `<aside>` y el `<main>` declaraban además `h-[calc(100vh-8rem)]`, y esa
+       segunda medida era un problema: `100vh` no descuenta la barra del
+       navegador ni las herramientas de desarrollo acopladas, así que en una
+       laptop la caja podía medir más que el hueco disponible y la raíz
+       `overflow-hidden` recortaba el final del panel sin dejar scroll.
+       `min-h-0` es lo que permite que un hijo con `overflow` propio encolhaja
+       en vez de desbordar la raíz.
+       ================================================================ -->
+  <div class="flex min-h-0 flex-1">
+    <aside
+      class="menu-lateral min-h-0 shrink-0 flex-col justify-between overflow-y-auto border-r border-slate-200 bg-white"
+      [class.menu-lateral--abierto]="!menuColapsado()"
+      [class.menu-lateral--cerrado]="menuColapsado()"
+      aria-label="Índice del expediente DAEX"
+    >
+      <div>
+        <div class="flex items-center justify-between px-5 pt-5 pb-3">
+          <span class="menu-titulo px-0 pb-0">Expediente DAEX</span>
+          <button
+            type="button"
+            class="boton-tenue !px-2 !py-1"
+            aria-label="Encoger el índice del expediente"
+            (click)="menuColapsado.set(!menuColapsado())"
+          >
+            [≡]
+          </button>
+        </div>
+
+        <!--
+          El índice solo lista los 7 capítulos principales. Las secciones no se
+          renderizan aquí: `ContenedorCapituloComponent` las apila verticalmente
+          en el panel derecho, así que el aside no conoce la granularidad fina.
+        -->
+        <nav class="flex flex-col pb-2">
+          @for (capitulo of capitulos(); track capitulo.id) {
+            <a
+              class="capitulo-boton"
+              [class.capitulo-boton--activo]="capituloEnCurso() === capitulo.numero"
+              [attr.aria-current]="capituloEnCurso() === capitulo.numero ? 'true' : null"
+              [routerLink]="['/formulario-iga', capitulo.numero]"
+            >
+              <span
+                class="circulo-semaforo-indicador"
+                [class.semaforo-gris]="estadoCapitulo(capitulo.numero) === 'Gris'"
+                [class.semaforo-azul]="estadoCapitulo(capitulo.numero) === 'Azul'"
+                [class.semaforo-verde]="estadoCapitulo(capitulo.numero) === 'Verde'"
+                [class.semaforo-rojo]="estadoCapitulo(capitulo.numero) === 'Rojo'"
+                [class.semaforo-ambar]="
+                  estadoCapitulo(capitulo.numero) === 'Gris' &&
+                  capituloEnCurso() === capitulo.numero
+                "
+                [class.circulo-semaforo-indicador--alerta]="capituloEnAlerta(capitulo.numero)"
+                >{{ capitulo.numero }}</span
+              >
+              <span class="flex-1 text-left">{{ capitulo.titulo }}</span>
+            </a>
+          }
+        </nav>
+
+        <!--
+          Leyenda del semáforo. Va bajo el índice y no en un tooltip porque los
+          colores son la única lectura rápida del estado de todo el expediente:
+          el azul de «subsanado» y el rojo de «observado» se parecen bastante en
+          una pantalla pequeña, y confundirlos lleva a subsanar algo que ya
+          estaba en manos del MINEM.
+        -->
+        <div class="leyenda-semaforo" aria-label="Leyenda del semáforo">
+          <span class="menu-titulo">Semáforo</span>
+          <ul class="mt-1.5 flex flex-col gap-1.5">
+            @for (entrada of leyendaSemaforo; track entrada.estado) {
+              <li class="flex items-start gap-2">
+                <span
+                  class="circulo-semaforo-leyenda"
+                  [class.semaforo-gris]="entrada.estado === 'Gris'"
+                  [class.semaforo-azul]="entrada.estado === 'Azul'"
+                  [class.semaforo-verde]="entrada.estado === 'Verde'"
+                  [class.semaforo-rojo]="entrada.estado === 'Rojo'"
+                  aria-hidden="true"
+                ></span>
+                <span class="text-[10px] leading-snug text-slate-500">{{ entrada.texto }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- Resumen del expediente anclado al pie del índice. -->
+      <div class="menu-pie">
+        <div class="flex items-center justify-between">
+          <span class="menu-titulo px-0 pb-0">Progreso</span>
+          <span class="text-xs font-black text-slate-800 tabular-nums">{{ avance() }}%</span>
+        </div>
+        <div class="barra-avance--riel mt-2 w-full">
+          <div class="barra-avance" [style.width.%]="avance()"></div>
+        </div>
+        <p class="mt-3 text-[11px] leading-relaxed text-slate-500">
+          {{ resumenEtapa() }}
+        </p>
+      </div>
+    </aside>
+
+    @if (menuColapsado()) {
+      <button
+        type="button"
+        class="boton-tenue sticky top-4 ml-3 shrink-0"
+        aria-label="Desplegar el índice del expediente"
+        (click)="menuColapsado.set(false)"
+      >
+        [≡]
+      </button>
+    }
+
+    <!-- ==============================================================
+         ORQUESTADOR DE CAPÍTULO · el `router-outlet` resuelve
+         `/formulario-iga/:capituloId` contra `ContenedorCapituloComponent`.
+         Este panel es el único con scroll propio: la cabecera y el índice
+         permanecen fijos mientras el titular recorre las microsecciones.
+         ============================================================== -->
+    <main class="min-h-0 min-w-0 flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 xl:p-8">
+      <router-outlet />
+    </main>
+  </div>
+
+  <!-- ================================================================
+       PIE DE PÁGINA · Créditos institucionales
+       ================================================================ -->
+  <footer class="consola-pie">
+    <p>Ministerio de Energía y Minas - Dirección General de Asuntos Ambientales Mineros (DGAAM)</p>
+    <p>Sede Central: Av. Las Artes Sur 260, San Borja, Lima, Perú. v1.0.0 (Ecosistema SEAL)</p>
+  </footer>
+</div>

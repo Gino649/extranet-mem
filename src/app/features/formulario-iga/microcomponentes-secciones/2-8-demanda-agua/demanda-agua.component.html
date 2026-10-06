@@ -1,0 +1,355 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR OBLIGATORIA DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección 2.8</p>
+    <h1 class="titulo">Demanda de Agua</h1>
+    <p class="bajada">
+      Declare la estimación del volumen hídrico requerido para las actividades del proyecto y
+      configure los puntos de abastecimiento autorizados.
+    </p>
+  </div>
+
+  <!-- CONTROL DE DEMANDA HÍDRICA -->
+  <div class="space-y-4 mt-6">
+    <div
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200/60 shadow-inner"
+    >
+      <div>
+        <h5
+          class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5"
+        >
+          <span>💧</span> Matriz de Consumo y Abastecimiento de Agua
+        </h5>
+        <p class="text-[10px] text-amber-600 font-bold uppercase mt-0.5 contador-bloque">
+          {{ fuentesAgua().length }} punto(s) · {{ totalDemanda() | number: '1.1-2' }} m³ declarados
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="abrirModalDemanda(null)"
+        class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-lg text-xs tracking-wide uppercase transition-all shadow-sm cursor-pointer"
+      >
+        ＋ Agregar Punto
+      </button>
+    </div>
+
+    <!-- Grilla Limpia de Solo Lectura con Scroll Horizontal Controlado -->
+    <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+      <table class="w-full text-left text-[11px] border-collapse min-w-[1000px]">
+        <thead>
+          <tr
+            class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[9px] select-none"
+          >
+            <th class="p-3 w-10 text-center">#</th>
+            <th class="p-3 w-32">Fase</th>
+            <th class="p-3 w-32">Etapa</th>
+            <th class="p-3 w-28 text-center">Cantidad (m³/día)</th>
+            <th class="p-3 w-24 text-center">N° Días</th>
+            <th class="p-3 w-32 text-center text-slate-900 font-black">Total (m³)</th>
+            <th class="p-3">Fuente de Abastecimiento</th>
+            <th class="p-3 w-56 text-center">Ubicación UTM (Este / Norte / Zona)</th>
+            <th class="p-3 w-28 text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of fuentesAgua(); track item.id; let i = $index) {
+            <tr
+              class="border-b border-slate-100 bg-white hover:bg-slate-50/40 transition-colors font-medium text-slate-700"
+            >
+              <td class="p-3 text-slate-400 font-mono font-bold text-center select-none">
+                {{ i + 1 }}
+              </td>
+              <td class="p-3 font-bold text-slate-900">{{ item.fase }}</td>
+              <td class="p-3 text-slate-600">{{ item.etapa }}</td>
+              <td class="p-3 font-mono font-bold text-center text-slate-800">
+                {{ item.cantidadDia | number: '1.1-2' }}
+              </td>
+              <td class="p-3 font-mono text-center text-slate-600">{{ item.numDias }} d</td>
+
+              <!-- Total Calculado (Cantidad * Días) -->
+              <td class="p-3 font-mono font-black text-center text-slate-900 bg-slate-50/30">
+                {{ item.cantidadDia * item.numDias | number: '1.1-2' }} m³
+              </td>
+
+              <td class="p-3 font-semibold text-slate-800">{{ item.fuente }}</td>
+              <td class="p-3 font-mono text-center text-slate-600">
+                {{ item.este | number }} E / {{ item.norte | number }} N / {{ item.zona }}
+              </td>
+              <td class="p-3 text-center space-x-1">
+                <button
+                  type="button"
+                  (click)="abrirModalDemanda(item)"
+                  class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold rounded text-[11px] cursor-pointer"
+                >
+                  ✏️ Editar
+                </button>
+                <button
+                  type="button"
+                  (click)="removerPuntoDemanda(item.id)"
+                  class="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold rounded text-[11px] cursor-pointer"
+                >
+                  ✕ Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="p-5 text-center text-slate-400 font-medium bg-white">
+                No hay puntos de demanda de agua declarados. Presione "Agregar Punto" para abrir el
+                formulario modal.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Botonera de Validación de la Sección -->
+  <div class="acciones">
+    <!-- El aviso de la última acción y el motivo de bloqueo son dos cosas
+         distintas: uno dice lo que acaba de pasar, el otro lo que falta. Se
+         muestran juntos para que un mensaje no tape al otro. -->
+    <div class="flex-1">
+      @if (mensaje(); as aviso) {
+        <p class="aviso">{{ aviso }}</p>
+      }
+      @if (bloqueo(); as pendiente) {
+        <p class="pendiente">{{ pendiente }}</p>
+      } @else {
+        <p class="pendiente pendiente--lista">Balance lista para validar.</p>
+      }
+    </div>
+    <button
+      type="button"
+      (click)="guardarYValidarDemandaSeccion()"
+      [disabled]="!grillaValida()"
+      class="boton-validar"
+    >
+      Guardar y Validar Sección 2.8
+    </button>
+  </div>
+</section>
+
+<!-- ========================================================== -->
+<!-- POPUP CENTRALIZADO CRUD: FORMULARIO MODAL DEMANDA DE AGUA  -->
+<!-- ========================================================== -->
+@if (modalAbierto()) {
+  <div
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-modal-demanda"
+  >
+    @if (modalData(); as datos) {
+      <div
+        class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-lg animate-zoom-in"
+      >
+        <!-- Cabecera del Popup -->
+        <div
+          class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 select-none"
+        >
+          <h4
+            id="titulo-modal-demanda"
+            class="text-xs font-black text-slate-900 uppercase tracking-tight"
+          >
+            {{
+              modalEsEdicion()
+                ? 'Editar Punto de Abastecimiento Hídrico'
+                : 'Datos de Abastecimiento Hídrico'
+            }}
+          </h4>
+          <button
+            type="button"
+            (click)="cerrarModalDemanda()"
+            aria-label="Cerrar"
+            class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs font-bold text-slate-700">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                for="modal-agua-fase"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                Fase *
+              </label>
+              <input
+                id="modal-agua-fase"
+                type="text"
+                placeholder="Ej. Perforación"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-bold shadow-inner"
+                [ngModel]="datos.fase"
+                (ngModelChange)="editarBorrador('fase', $event)"
+              />
+            </div>
+            <div>
+              <label
+                for="modal-agua-etapa"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                Etapa *
+              </label>
+              <input
+                id="modal-agua-etapa"
+                type="text"
+                placeholder="Ej. Exploración"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-bold shadow-inner"
+                [ngModel]="datos.etapa"
+                (ngModelChange)="editarBorrador('etapa', $event)"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label
+                for="modal-agua-cantidad"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                Cantidad (m³/día) *
+              </label>
+              <input
+                id="modal-agua-cantidad"
+                type="number"
+                placeholder="0.00"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+                [ngModel]="datos.cantidadDia"
+                (ngModelChange)="editarBorradorNumero('cantidadDia', $event)"
+              />
+            </div>
+            <div>
+              <label
+                for="modal-agua-dias"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                N° Días *
+              </label>
+              <input
+                id="modal-agua-dias"
+                type="number"
+                placeholder="0"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+                [ngModel]="datos.numDias"
+                (ngModelChange)="editarBorradorNumero('numDias', $event)"
+              />
+            </div>
+            <div>
+              <span class="block uppercase mb-0.5 text-[9px] text-slate-400 font-black">
+                Total Calculado
+              </span>
+              <span
+                class="block font-mono font-black text-slate-800 text-sm pt-1.5 text-center total-modal"
+              >
+                {{ totalModal() | number: '1.1-2' }} m³
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="modal-agua-fuente"
+              class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+            >
+              Fuente de Abastecimiento *
+            </label>
+            <input
+              id="modal-agua-fuente"
+              type="text"
+              placeholder="Ej. Proveedor Autorizado Cisternas / Quebrada San José"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-bold shadow-inner"
+              [ngModel]="datos.fuente"
+              (ngModelChange)="editarBorrador('fuente', $event)"
+            />
+          </div>
+
+          <div class="pt-3 border-t border-slate-100">
+            <span
+              class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 select-none"
+            >
+              Punto de Ubicación de Captación
+            </span>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label
+                  for="modal-agua-este"
+                  class="block uppercase mb-1 text-[9px] text-slate-500 font-bold"
+                >
+                  Este (X) UTM *
+                </label>
+                <input
+                  id="modal-agua-este"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs focus:outline-none focus:bg-white"
+                  [ngModel]="datos.este"
+                  (ngModelChange)="editarBorradorNumero('este', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-agua-norte"
+                  class="block uppercase mb-1 text-[9px] text-slate-500 font-bold"
+                >
+                  Norte (Y) UTM *
+                </label>
+                <input
+                  id="modal-agua-norte"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs focus:outline-none focus:bg-white"
+                  [ngModel]="datos.norte"
+                  (ngModelChange)="editarBorradorNumero('norte', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-agua-zona"
+                  class="block uppercase mb-1 text-[9px] text-slate-500 font-bold"
+                >
+                  Zona UTM *
+                </label>
+                <select
+                  id="modal-agua-zona"
+                  class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:bg-white"
+                  [value]="datos.zona"
+                  (change)="alElegirZona($event)"
+                >
+                  @for (zona of zonas; track zona) {
+                    <option [value]="zona" [selected]="zona === datos.zona">{{ zona }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botonera del Popup -->
+        <div class="pt-4 mt-6 border-t border-slate-100 flex justify-end gap-2 select-none">
+          @if (bloqueoModal(); as motivo) {
+            <p class="pendiente mr-auto">{{ motivo }}</p>
+          }
+          <button
+            type="button"
+            (click)="cerrarModalDemanda()"
+            class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="procesarGuardadoDemandaModal()"
+            [disabled]="!modalDataValido()"
+            class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-xl text-xs uppercase shadow-sm cursor-pointer disabled:from-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+          >
+            Grabar Punto
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}

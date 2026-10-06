@@ -1,0 +1,14 @@
+@reference '../../../../styles.css';
+
+/*
+ * El orquestador no viste a las microsecciones: cada una aporta su propia
+ * tarjeta Premium. Aquí solo se gobierna el ritmo vertical del scroll continuo.
+ *
+ * El envoltorio de cada ficha es deliberadamente neutro para evitar tarjetas
+ * anidadas; el aislamiento visual queda a cargo del microcomponente. El
+ * desplazamiento al llegar a un ancla se resuelve con la utilidad `scroll-mt-24`
+ * aplicada en la plantilla.
+ */
+:host {
+  display: block;
+}

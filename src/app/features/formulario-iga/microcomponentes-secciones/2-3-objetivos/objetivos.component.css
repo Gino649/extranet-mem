@@ -1,0 +1,68 @@
+@reference '../../../../../styles.css';
+
+.tarjeta {
+  @apply w-full bg-white border border-slate-200/80 rounded-2xl p-8;
+  box-shadow: 0 8px 30px rgb(15 23 42 / 0.04);
+}
+
+.cabecera {
+  @apply border-b border-slate-100 pb-4;
+}
+
+.etiqueta {
+  /*@apply text-xs font-bold text-amber-600 uppercase tracking-wider block mb-1;*/
+  @apply mb-1.5 block text-[10px] font-bold tracking-[0.18em] text-slate-500 uppercase;
+}
+
+.titulo {
+  @apply text-xl font-black text-slate-900 tracking-tight;
+}
+
+.bajada {
+  @apply text-xs text-slate-400 mt-1 font-medium;
+}
+
+/* --------------------------------------------------------------------
+   CONTADOR EN VIVO
+
+   El enunciado lo pintaba en rojo «al superar 1000» caracteres, pero el
+   mismo textarea imponía `maxlength="1000"`: esa condición no se podía
+   cumplir nunca. Aquí el aviso anticipa el tope, que es cuando el titular
+   todavía puede decidir qué recortar, y el rojo se reserva para el tope
+   alcanzado.
+   ------------------------------------------------------------------ */
+.contador {
+  @apply shrink-0 font-mono text-[10px] font-bold text-slate-400;
+}
+
+.contador--aviso {
+  @apply text-amber-600;
+}
+
+.contador--limite {
+  @apply text-red-500;
+}
+
+.contador-nota {
+  @apply font-sans font-bold;
+}
+
+/* --------------------------------------------------------------------
+   PISTA DE EXTENSIÓN MÍNIMA
+
+   El botón se habilita a los 30 caracteres sin explicar por qué, y un
+   titular que escribe un titular corto y correcto lo interpreta como que
+   el formulario está roto.
+   ------------------------------------------------------------------ */
+.pista {
+  @apply mt-1.5 text-[11px] font-medium text-slate-400;
+}
+
+.aviso-guardado {
+  @apply mt-4 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 rounded-lg px-3 py-2;
+}
+
+.boton-oro {
+  @apply inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-4 py-2.5 text-xs font-black tracking-wider text-slate-950 uppercase transition-all duration-300 disabled:cursor-not-allowed disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 disabled:text-slate-500;
+  box-shadow: 0 4px 20px rgb(245 158 11 / 0.3);
+}

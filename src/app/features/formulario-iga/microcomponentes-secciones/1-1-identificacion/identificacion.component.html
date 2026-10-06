@@ -1,0 +1,103 @@
+<section class="tarjeta">
+  <!-- ============================================================
+       Cabecera de la sección · procedencia y régimen de solo consulta
+       ============================================================ -->
+  <div class="cabecera">
+    <div class="min-w-0 flex-1">
+      <h4 class="titulo">
+        {{ numero() }} {{ seccion()?.titulo ?? 'Identificación del Titular y Representación' }}
+      </h4>
+      <p class="bajada">
+        Información legal sincronizada automáticamente desde el Registro Maestro de Administrados
+        del MINEM.
+      </p>
+    </div>
+    <span class="sello-lectura" title="Los datos se editan en el Registro Maestro de Administrados">
+      Solo consulta
+    </span>
+  </div>
+
+  <div class="space-y-6">
+    <!-- ==========================================================
+         Bloque A · Persona jurídica
+         ========================================================== -->
+    <div class="bloque">
+      <h5 class="bloque-titulo">
+        <span aria-hidden="true">🏢</span>
+        Datos de la Persona Jurídica
+      </h5>
+
+      <div class="rejilla">
+        <div class="dato">
+          <span class="dato-etiqueta">Razón Social</span>
+          <span class="dato-valor dato-valor--fuerte">{{ razonSocial() }}</span>
+        </div>
+
+        <div class="dato">
+          <span class="dato-etiqueta">RUC Institucional</span>
+          <span class="dato-valor dato-valor--codigo" [class.dato-valor--anomalo]="!rucValido()">
+            {{ ruc() }}
+          </span>
+        </div>
+
+        <div class="dato dato--ancho">
+          <span class="dato-etiqueta">Domicilio Legal</span>
+          <span class="dato-valor">{{ domicilio() }}</span>
+        </div>
+
+        <div class="dato">
+          <span class="dato-etiqueta">Ubigeo</span>
+          <span class="dato-valor dato-valor--media">{{ ubigeo() }}</span>
+        </div>
+
+        <div class="dato">
+          <span class="dato-etiqueta">Correo Electrónico Institucional</span>
+          <span class="dato-valor dato-valor--enlace">{{ correoLegal() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         Bloque B · Representación legal
+         ========================================================== -->
+    <div class="bloque">
+      <h5 class="bloque-titulo">
+        <span aria-hidden="true">👤</span>
+        Representación Legal Autorizada
+      </h5>
+
+      <div class="rejilla">
+        <div class="dato">
+          <span class="dato-etiqueta">Nombres y Apellidos</span>
+          <span class="dato-valor dato-valor--fuerte">{{ representante() }}</span>
+        </div>
+
+        <div class="dato">
+          <span class="dato-etiqueta">Cargo del Representante</span>
+          <span class="dato-valor dato-valor--media">{{ cargo() }}</span>
+        </div>
+
+        <div class="dato dato--ancho">
+          <span class="dato-etiqueta">Correo Electrónico de Notificación</span>
+          <span class="dato-valor dato-valor--enlace">{{ correoRepresentante() }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Pie · estado del semáforo, sin acción manual
+       ============================================================ -->
+  <div class="pie">
+    <span class="dato-etiqueta">Semáforo</span>
+    @if (seccion(); as seccionActual) {
+      <span class="estado" [class]="'estado estado--' + seccionActual.estado.toLowerCase()">
+        <span class="estado-punto" aria-hidden="true"></span>
+        {{ seccionActual.estado }} Conforme
+      </span>
+    } @else {
+      <span class="estado">Sección no registrada en el expediente</span>
+    }
+    <span class="dato-nota">Verificado contra el padrón · sin edición local</span>
+  </div>
+</section>

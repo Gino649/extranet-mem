@@ -1,0 +1,410 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTANDAR DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Delimitación del Área Efectiva' }}</h1>
+    <p class="bajada">
+      {{
+        seccion()?.descripcion ??
+          'Inventario de áreas superficiales por categoría y edición del polígono del área efectiva.'
+      }}
+    </p>
+  </div>
+
+  <!-- BLOQUE 1: INVENTARIO DE AREAS EN ACTIVIDAD MINERA -->
+  <div class="bloque">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h5 class="rotulo-bloque">Áreas en actividad minera</h5>
+      <button type="button" class="boton-tenue" (click)="abrirModalNuevo('ACTIVIDAD')">
+        + Nueva área
+      </button>
+    </div>
+
+    <div class="marco-tabla">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="encabezado">
+            <th>Descripción</th>
+            <th>Actividad</th>
+            <th>Zona</th>
+            <th>Datum</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (area of areasActividad(); track area.id) {
+            <tr class="fila">
+              <td class="p-3 font-semibold text-slate-800">{{ area.descripcion }}</td>
+              <td class="p-3 text-slate-600">{{ area.actividad }}</td>
+              <td class="p-3 text-slate-600">{{ area.zona }}</td>
+              <td class="p-3 text-slate-500">{{ area.datum }}</td>
+              <td class="p-3 text-right whitespace-nowrap">
+                <button type="button" class="boton-enlace" (click)="seleccionarArea(area)">
+                  Dibujar polígono
+                </button>
+                <button type="button" class="boton-enlace" (click)="abrirModalEdicion(area)">
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="boton-enlace boton-enlace--peligro"
+                  (click)="eliminarArea(area.id, 'ACTIVIDAD')"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="celda-vacia">No hay áreas registradas en actividad minera.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BLOQUE 2: INVENTARIO DE AREAS EN USO MINERO -->
+  <div class="bloque">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h5 class="rotulo-bloque">Áreas en uso minero</h5>
+      <button type="button" class="boton-tenue" (click)="abrirModalNuevo('USO')">
+        + Nueva área
+      </button>
+    </div>
+
+    <div class="marco-tabla">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="encabezado">
+            <th>Descripción</th>
+            <th>Actividad</th>
+            <th>Zona</th>
+            <th>Datum</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (area of areasUso(); track area.id) {
+            <tr class="fila">
+              <td class="p-3 font-semibold text-slate-800">{{ area.descripcion }}</td>
+              <td class="p-3 text-slate-600">{{ area.actividad }}</td>
+              <td class="p-3 text-slate-600">{{ area.zona }}</td>
+              <td class="p-3 text-slate-500">{{ area.datum }}</td>
+              <td class="p-3 text-right whitespace-nowrap">
+                <button type="button" class="boton-enlace" (click)="seleccionarArea(area)">
+                  Dibujar polígono
+                </button>
+                <button type="button" class="boton-enlace" (click)="abrirModalEdicion(area)">
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="boton-enlace boton-enlace--peligro"
+                  (click)="eliminarArea(area.id, 'USO')"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="celda-vacia">No hay áreas registradas en uso minero.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!--
+    PANEL DE DELIMITACION
+
+    El visor y la grilla de vertices viven aqui y no junto a los inventarios:
+    un poligono a medias no es un dato del expediente, es un borrador, y dejarlo
+    a la vista junto a las areas ya grabadas lo haria parecer definitivo.
+  -->
+  @if (modalAbierto()) {
+    <div class="velo" (click)="cerrarModalArea()">
+      <div class="modalo" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <header class="modalo-cabecera">
+          <button
+            type="button"
+            class="modalo-cerrar"
+            aria-label="Cerrar"
+            (click)="cerrarModalArea()"
+          >
+            &times;
+          </button>
+          <p class="etiqueta">
+            {{ modalCategoria() === 'ACTIVIDAD' ? 'Actividad minera' : 'Uso minero' }}
+          </p>
+          <h3 class="titulo">
+            {{ modalEnEdicion() ? 'Editar área superficial' : 'Nueva área superficial' }}
+          </h3>
+          <ol class="pasos">
+            <li class="paso" [class.paso-activo]="paso() === 'datos'">
+              <span class="paso-numero">1</span> Datos del área
+            </li>
+            <li class="paso" [class.paso-activo]="paso() === 'geometria'">
+              <span class="paso-numero">2</span> Geometría
+            </li>
+          </ol>
+        </header>
+
+        <!-- PASO 1: DATOS DEL AREA -->
+        @if (paso() === 'datos') {
+          <div class="modalo-cuerpo">
+            <div class="campo">
+              <label for="area-descripcion">Descripción</label>
+              <input
+                id="area-descripcion"
+                type="text"
+                placeholder="Ej. Tajamar Norte"
+                [value]="borrador().descripcion"
+                (input)="alEscribirBorrador('descripcion', $event)"
+              />
+            </div>
+
+            <div class="campo">
+              <label for="area-actividad">Actividad</label>
+              <input
+                id="area-actividad"
+                type="text"
+                placeholder="Ej. Explotación minera"
+                [value]="borrador().actividad"
+                (input)="alEscribirBorrador('actividad', $event)"
+              />
+            </div>
+
+            <div class="campo">
+              <label for="area-zona">Zona UTM</label>
+              <select id="area-zona" [value]="borrador().zona" (change)="alElegirZona($event)">
+                @for (zona of zonas; track zona) {
+                  <option [value]="zona" [selected]="zona === borrador().zona">{{ zona }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="area-datum">Datum</label>
+              <input id="area-datum" type="text" [value]="datum" disabled />
+            </div>
+          </div>
+
+          <footer class="modalo-pie">
+            <button type="button" class="boton-tenue" (click)="cerrarModalArea()">Cancelar</button>
+            <button
+              type="button"
+              class="boton-oro"
+              [disabled]="!modalDataValido()"
+              (click)="procesarGuardadoModal()"
+            >
+              Guardar y dibujar
+            </button>
+          </footer>
+        }
+
+        <!-- PASO 2: VISOR Y VERTICES -->
+        @if (paso() === 'geometria') {
+          <div class="modalo-cuerpo">
+            @if (aviso(); as mensaje) {
+              <p class="aviso">{{ mensaje }}</p>
+            }
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="boton-tenue cursor-pointer">
+                  Cargar CSV
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    class="sr-only"
+                    (change)="alSubirCsv($event)"
+                  />
+                </label>
+                <label class="boton-tenue cursor-pointer">
+                  Cargar Shapefile
+                  <input
+                    type="file"
+                    accept=".shp,.zip,application/zip"
+                    class="sr-only"
+                    (change)="alSubirShapefile($event)"
+                  />
+                </label>
+                <button type="button" class="boton-tenue" (click)="limpiarEstructuraMapa()">
+                  Limpiar vértices
+                </button>
+              </div>
+
+              <button type="button" class="boton-tenue" (click)="agregarNuevaCoordenadaManual()">
+                + Agregar vértice
+              </button>
+            </div>
+
+            <!--
+              VISTA PARTIDA · VERTICES A LA IZQUIERDA, VISOR A LA DERECHA
+
+              Lado a lado y no apilados porque se leen en el mismo instante: quien
+              corrige un vertice necesita ver el poligono que ese vertice dibuja.
+              Apilados, una importacion de 260 filas dejaba el mapa fuera de
+              pantalla y habia que subir y bajar para contrastar ambos bloques.
+
+              Los dos paneles tienen alto propio, de modo que la masa de filas
+              queda contenida dentro de la grilla y el visor no se mueve.
+            -->
+            <div class="panel-dual">
+              <!-- PANEL IZQUIERDO · 5 de 12 columnas -->
+              <section class="panel-dual__columna panel-dual__columna--vertices">
+                <h6 class="rotulo-panel">Vértices del polígono</h6>
+
+                <!--
+                  `contenedor-tabla-vertices` y no `marco-tabla` a secas: el alto
+                  congelado y el scroll interno son propios de esta grilla, y los
+                  dos inventarios de arriba deben seguir creciendo con sus filas.
+                -->
+                <div class="marco-tabla contenedor-tabla-vertices">
+                  <!--
+                    `border-separate` no es decorativo: con `border-collapse` los
+                    bordes colapsan en la tabla y la cabecera pegada pierde el
+                    suyo al desplazarse, que es justo el defecto que se quiere
+                    evitar en una grilla de 260 filas.
+                  -->
+                  <table class="w-full border-separate border-spacing-0 text-left text-xs">
+                    <thead>
+                      <tr class="encabezado">
+                        <th>#</th>
+                        <th>Este (m)</th>
+                        <th>Norte (m)</th>
+                        <th class="text-right">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (vertice of coordenadas(); track vertice.id; let indice = $index) {
+                        <tr class="fila">
+                          <td class="p-3 text-slate-400">{{ indice + 1 }}</td>
+                          <td class="p-3">
+                            <input
+                              type="number"
+                              class="celda-coordenada"
+                              [value]="vertice.este ?? ''"
+                              (input)="alEscribirVertice(vertice.id, 'este', $event)"
+                            />
+                          </td>
+                          <td class="p-3">
+                            <input
+                              type="number"
+                              class="celda-coordenada"
+                              [value]="vertice.norte ?? ''"
+                              (input)="alEscribirVertice(vertice.id, 'norte', $event)"
+                            />
+                          </td>
+                          <td class="p-3 text-right">
+                            <button
+                              type="button"
+                              class="boton-enlace boton-enlace--peligro"
+                              (click)="eliminarCoordenadaFila(vertice.id)"
+                            >
+                              Eliminar
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="4" class="celda-vacia">
+                            Sin vértices. Agregue al menos tres para cerrar un polígono.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <!-- PANEL DERECHO · 7 de 12 columnas -->
+              <section class="panel-dual__columna panel-dual__columna--mapa">
+                <h6 class="rotulo-panel">Plano de referencia</h6>
+
+                <div class="marco-visor">
+                  <!--
+                    El id no duplica la clase: fija el alto del lienzo por
+                    especificidad, y la clase se conserva como ancla del visor
+                    para el montaje y para las pruebas.
+                  -->
+                  <div #mapaCore id="mapa-delimitacion-core" class="lienzo-mapa"></div>
+
+                  <!--
+                    SELECTOR DE CAPAS
+
+                    Va en la plantilla y no como control de OpenLayers a propósito:
+                    los controles se crean con `document.createElement`, de modo que
+                    un selector de capas dibujado por `ol` quedaría fuera del
+                    encapsulado del componente y sus clases no se aplicarían. Es el
+                    mismo motivo por el que los estilos de `ol` viven en
+                    `src/styles.css` y no en este archivo.
+                  -->
+                  <div class="selector-capas" role="group" aria-label="Capas del visor">
+                    <span class="selector-capas__rotulo">Mapa</span>
+                    @for (opcion of capasBase; track opcion.clave) {
+                      <label class="selector-capas__opcion">
+                        <input
+                          type="radio"
+                          name="capaBase"
+                          [value]="opcion.clave"
+                          [checked]="capaBase() === opcion.clave"
+                          (change)="cambiarCapaBase(opcion.clave)"
+                        />
+                        <span>{{ opcion.titulo }}</span>
+                      </label>
+                    }
+                    <label class="selector-capas__opcion">
+                      <input
+                        type="checkbox"
+                        [checked]="poligonoVisible()"
+                        (change)="alternarPoligono($event)"
+                      />
+                      <span>Polígono</span>
+                    </label>
+                  </div>
+
+                  <div class="leyenda-visor">
+                    @if (areaSeleccionada(); as area) {
+                      <p class="text-xs font-bold text-slate-800">{{ area.descripcion }}</p>
+                      <p class="text-[11px] text-slate-500">
+                        {{ area.actividad }} · {{ area.zona }} · {{ area.datum }}
+                      </p>
+                      <p
+                        class="text-[11px]"
+                        [class.text-amber-700]="!coordenadasValidas()"
+                        [class.text-emerald-700]="coordenadasValidas()"
+                      >
+                        {{ estadoGeometrico() }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <footer class="modalo-pie">
+            <p class="aviso modalo-pie-aviso">
+              @if (!coordenadasValidas()) {
+                Complete al menos tres vértices para cerrar el polígono
+              }
+            </p>
+            <button type="button" class="boton-tenue" (click)="volverADatos()">Volver</button>
+            <button
+              type="button"
+              class="boton-oro"
+              [disabled]="!coordenadasValidas()"
+              (click)="grabarAreaValidada()"
+            >
+              Grabar área validada
+            </button>
+          </footer>
+        }
+      </div>
+    </div>
+  }
+</section>

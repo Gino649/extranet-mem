@@ -1,0 +1,144 @@
+<section class="tarjeta">
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Datos Generales del Proyecto de Exploración' }}</h1>
+    <p class="bajada">
+      Defina los parámetros base de la campaña de perforación y vincule el trámite a una Unidad
+      Minera activa.
+    </p>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Bloque A: Información del Trámite (SOLO CONSULTA / MAESTRA INMUTABLE) -->
+    <div
+      class="data-maestra bg-slate-50/60 border border-slate-200/60 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs"
+    >
+      <div>
+        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide"
+          >Instrumento de Gestión Ambiental (IGA)</span
+        >
+        <span
+          class="block mt-1 font-black text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded w-max tracking-wide text-xs"
+          >{{ instrumento() }}</span
+        >
+      </div>
+      <div>
+        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide"
+          >Titular Minero Declarante</span
+        >
+        <span class="block mt-1 font-bold text-slate-800 text-sm">{{ store.razonSocial() }}</span>
+      </div>
+    </div>
+
+    <!-- Bloque B: Formulario de Registro Activo (CAMPOS DE INGRESO) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Campo: Nombre del Proyecto -->
+      <div class="md:col-span-2">
+        <label
+          for="nombreProyecto"
+          class="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide"
+          >Nombre del Proyecto <span class="text-red-500">*</span></label
+        >
+        <input
+          id="nombreProyecto"
+          type="text"
+          [value]="nombreProyecto()"
+          (input)="alEscribirNombre($event)"
+          placeholder="Ej. Proyecto de Exploración Diamantina Las Dunas Fase II"
+          class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 font-medium placeholder-slate-400 shadow-inner focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 focus:outline-none text-xs transition-all duration-300"
+        />
+      </div>
+
+      <!-- Campo: Selector / Creación de Unidad Minera -->
+      <div>
+        <label
+          for="unidadMinera"
+          class="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide"
+          >Unidad Minera / Económica <span class="text-red-500">*</span></label
+        >
+        <div class="flex gap-2">
+          <select
+            id="unidadMinera"
+            [value]="unidadMineraSeleccionada()"
+            (change)="alElegirUnidad($event)"
+            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 font-medium focus:bg-white focus:border-amber-500 focus:outline-none text-xs shadow-inner transition-all duration-300"
+          >
+            <option value="" disabled>-- Seleccione una Unidad Activa --</option>
+            @for (unidad of unidades; track unidad.id) {
+              <option [value]="unidad.id">{{ unidad.nombre }}</option>
+            }
+            <option [value]="idNuevaUnidad">⚙️ [ Registrar Nueva Unidad Minera ]</option>
+          </select>
+        </div>
+        @if (unidadPendiente()) {
+          <p class="mt-1.5 text-[11px] font-medium text-amber-600">
+            La unidad quedará registrada en el padrón al remitir el expediente.
+          </p>
+        }
+      </div>
+
+      <!-- Campo: Monto de Inversión del Proyecto -->
+      <div>
+        <label
+          for="montoInversion"
+          class="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide"
+          >Monto de Inversión Estimado (USD) <span class="text-red-500">*</span></label
+        >
+        <div class="campo-adornado">
+          <div class="adorno adorno-izquierdo">$</div>
+          <input
+            id="montoInversion"
+            type="number"
+            min="0"
+            step="0.01"
+            [value]="montoInversion()"
+            (input)="alEscribirMonto($event)"
+            placeholder="0.00"
+            class="w-full pl-8 pr-4 py-3 text-slate-900 font-mono font-bold placeholder-slate-300 focus:outline-none text-xs"
+          />
+        </div>
+      </div>
+
+      <!-- Campo: Vida Útil del Proyecto -->
+      <div>
+        <label
+          for="vidaUtil"
+          class="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide"
+          >Vida Útil de la Campaña <span class="text-red-500">*</span></label
+        >
+        <div class="campo-adornado">
+          <input
+            id="vidaUtil"
+            type="number"
+            min="0"
+            step="1"
+            [value]="vidaUtil()"
+            (input)="alEscribirVidaUtil($event)"
+            placeholder="Ej. 12"
+            class="w-full py-3 pl-4 pr-16 text-slate-900 font-mono font-bold placeholder-slate-300 focus:outline-none text-xs"
+          />
+          <div class="adorno adorno-derecho">Meses</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Acuse de recibo del guardado -->
+    @if (guardado()) {
+      <p class="aviso-guardado" role="status">
+        Sección 2.1 validada. La cabecera del expediente ya refleja el nombre y la unidad minera.
+      </p>
+    }
+
+    <!-- Botonera de Validación Local de la Sección -->
+    <div class="pt-4 flex justify-end border-t border-slate-100">
+      <button
+        type="button"
+        (click)="guardarYValidarSeccion()"
+        [disabled]="!formularioValido()"
+        class="boton-oro"
+      >
+        Guardar y Validar Sección 2.1
+      </button>
+    </div>
+  </div>
+</section>

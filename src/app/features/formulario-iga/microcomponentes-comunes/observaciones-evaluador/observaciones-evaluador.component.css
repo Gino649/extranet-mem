@@ -1,0 +1,63 @@
+@reference '../../../../../styles.css';
+
+/*
+ * La tarjeta lleva borde rojo porque no es un error del titular: es un acta
+ * del evaluador que hay que responder. El fondo ámbar marca la urgencia sin
+ * gritar, y la severidad concreta de cada observación la dan sus chips.
+ */
+.bloque-observaciones {
+  @apply rounded-xl border border-red-200 bg-amber-50/60 p-5 shadow-sm;
+}
+
+/* El aviso de la última acción se pinta junto a la bandeja y no en un alert:
+   el titular sigue viendo la fila a la que se refiere. */
+.aviso-evaluacion {
+  @apply mt-3 rounded-lg border border-amber-200 bg-white px-3 py-2 text-[11px] font-semibold text-amber-800;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: aparecer 0.18s ease-out;
+}
+
+/* La fila de subsanación se despliega bajo la que la originó: entra deslizando
+   hacia arriba y con un leve desplazamiento lateral, para que se lea como una
+   extensión de la fila y no como un bloque nuevo que apareció en pantalla. */
+@keyframes fadeInSlider {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fila-subsanacion {
+  animation: fadeInSlider 0.18s ease-out;
+}
+
+/* La última fila no necesita separador inferior: el borde del contenedor ya
+   cierra el cuadro, y el doble borde se nota como una línea más gruesa pegada
+   al borde de la tarjeta. */
+table tbody tr:last-child {
+  border-bottom: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fila-subsanacion {
+    animation: none;
+  }
+}

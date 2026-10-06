@@ -1,0 +1,116 @@
+@reference '../../../../../styles.css';
+
+/* --------------------------------------------------------------------
+   TARJETA · Umbral bajo de ruido visual
+
+   El capítulo apila esta pieza junto a otras, así que el contenedor exterior
+   baja el peso de la sombra y del relleno respecto al formulario original: la
+   densidad la aportan los bloques internos, no el marco.
+   ------------------------------------------------------------------ */
+.tarjeta {
+  @apply w-full rounded-2xl border border-slate-200/60 bg-white p-6;
+  box-shadow: 0 6px 24px rgb(15 23 42 / 0.03);
+}
+
+/* --------------------------------------------------------------------
+   CABECERA · título compacto, procedencia y sello de solo consulta
+   ------------------------------------------------------------------ */
+.cabecera {
+  @apply mb-5 flex items-start gap-4 border-b border-slate-100 pb-3;
+}
+
+.titulo {
+  @apply text-sm font-black tracking-tight text-slate-800 uppercase;
+}
+
+.bajada {
+  @apply mt-1 text-[11px] font-medium text-slate-400;
+}
+
+/*
+ * El sello no es decorativo: comunica que editar aquí es imposible y evita
+ * que el titular busque un campo que no existe.
+ */
+.sello-lectura {
+  @apply shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase;
+}
+
+/* --------------------------------------------------------------------
+   BLOQUES · Tarjetas internas de borde ultra delgado
+   ------------------------------------------------------------------ */
+.bloque {
+  @apply rounded-xl border border-slate-200/60 bg-slate-50/60 p-5;
+}
+
+.bloque-titulo {
+  @apply mb-4 flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-600 uppercase;
+}
+
+/* Rejilla de dos columnas: en móvil cada dato ocupa el ancho completo. */
+.rejilla {
+  @apply grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2;
+}
+
+.dato {
+  @apply min-w-0;
+}
+
+.dato--ancho {
+  @apply md:col-span-2;
+}
+
+/* --------------------------------------------------------------------
+   PARES ETIQUETA / VALOR · Etiqueta atenuada, valor con contraste
+   ------------------------------------------------------------------ */
+.dato-etiqueta {
+  @apply block text-[10px] font-bold tracking-wide text-slate-400 uppercase;
+}
+
+/* Base de todos los valores: nunca por debajo de slate-600 para no perder legibilidad. */
+.dato-valor {
+  @apply mt-1 block text-xs font-semibold break-words text-slate-700;
+}
+
+.dato-valor--fuerte {
+  @apply text-sm font-bold text-slate-800;
+}
+
+.dato-valor--media {
+  @apply font-semibold text-slate-700;
+}
+
+/* El RUC va en monoespaciado y con tracking: es un código, no una palabra. */
+.dato-valor--codigo {
+  @apply w-max rounded bg-slate-200/50 px-2 py-0.5 font-mono font-bold tracking-wider text-slate-700;
+}
+
+/*
+ * Si el padrón devolviera un RUC mal formado, el sello se tiñe en rojo en vez de
+ * romper la maqueta: una anomalía de sincronización debe verse.
+ */
+.dato-valor--anomalo {
+  @apply bg-red-50 text-red-700;
+}
+
+.dato-valor--enlace {
+  @apply font-semibold text-slate-700 underline decoration-slate-200 underline-offset-2;
+}
+
+/* --------------------------------------------------------------------
+   PIE · Estado del semáforo, sin acción manual
+   ------------------------------------------------------------------ */
+.pie {
+  @apply mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-100 pt-4;
+}
+
+.estado {
+  @apply inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700;
+}
+
+.estado-punto {
+  @apply size-1.5 rounded-full bg-emerald-500;
+}
+
+.dato-nota {
+  @apply ml-auto text-[10px] font-medium text-slate-400;
+}

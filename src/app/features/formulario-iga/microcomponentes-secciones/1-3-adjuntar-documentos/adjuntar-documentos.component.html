@@ -1,0 +1,104 @@
+<!--
+  Dos variantes sobre la misma implementación.
+
+  `app-adjuntar-documentos` se usa como ficha de sección y necesita su propio
+  encabezado. `app-smart-uploader` se incrusta dentro del bloque de otra sección,
+  que ya aporta tarjeta y título, así que la variante embebida suprime el
+  encabezado y neutraliza el marco con `.tarjeta--embebida`. La alternativa era
+  duplicar con `ng-template` el marcado de la zona de carga y la lista.
+-->
+<section class="tarjeta" [class.tarjeta--embebida]="embebido()">
+  @if (!embebido()) {
+    <p class="etiqueta">Sección {{ seccion()?.numero }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Adjuntar Documentos' }}</h1>
+    <p class="bajada">
+      Carga múltiple. Tope estricto de {{ topeLegible }} por documento. Formatos admitidos: PDF,
+      Office, imágenes georreferenciadas, CAD y <code>.zip</code> con Shapefiles.
+    </p>
+  }
+
+  <!--
+  Un solo manejamiento para clic y arrastre: la etiqueta abre el explorador por
+  asociación con `for`, y los eventos de arrastre alimentan la misma válvula
+  `procesarArchivos`. El marco discontinuo y el tinte ámbar comunican que la
+  superficie acepta la soltada sin necesidad de una instrucción aparte.
+-->
+  <label
+    class="zona-soltar"
+    [class.zona-soltar--activa]="esArrastrando()"
+    [for]="idEntrada"
+    (dragover)="alArrastrarSobre($event)"
+    (dragleave)="alSalirDeArrastrar($event)"
+    (drop)="alSoltarArchivos($event)"
+  >
+    <!--
+    `accept` se enlaza en blanco cuando la sección no restringe formatos: el
+    diálogo del sistema lo ignora y el componente sigue explicando cada rechazo
+    fila por fila, en vez de esconder el motivo detrás de un filtro invisible.
+  -->
+    <input
+      [id]="idEntrada"
+      type="file"
+      class="sr-only"
+      [multiple]="multiple()"
+      [attr.accept]="aceptarExtensiones()"
+      (change)="alSeleccionar($event)"
+    />
+
+    <div class="flex flex-col items-center gap-2 text-center select-none">
+      <span class="glifo-zona" aria-hidden="true">📥</span>
+
+      @if (esArrastrando()) {
+        <span class="titulo-zona titulo-zona--arrastre">Suelte los archivos para adjuntarlos</span>
+      } @else {
+        <span class="titulo-zona">Arrastre y suelte varios documentos aquí</span>
+        <span class="subtitulo-zona">o haga clic para examinar los archivos de su equipo</span>
+      }
+
+      <span class="pista-zona">
+        @if (multiple()) {
+          Formatos: {{ extensionesLegible() }}
+        } @else {
+          Un solo archivo · {{ extensionesLegible() }}
+        }
+        · Máx. {{ topeLegible }} por archivo
+      </span>
+    </div>
+  </label>
+
+  @if (archivos().length > 0) {
+    <div class="mt-5 flex items-center justify-between">
+      <p class="texto-resumen">
+        <strong class="text-emerald-700">{{ aceptados().length }}</strong> aceptados ·
+        <strong class="text-red-600">{{ rechazados().length }}</strong> rechazados ·
+        {{ formatearTamano(pesoAceptado()) }} en total
+      </p>
+      <button type="button" class="boton-tenue" (click)="limpiar()">Vaciar</button>
+    </div>
+
+    <ul class="mt-3 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200">
+      @for (archivo of archivos(); track archivo.id) {
+        <li class="fila" [class.fila--rechazado]="!archivo.aceptado">
+          <span class="text-base">{{ archivo.aceptado ? '📄' : '⛔' }}</span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold text-slate-800">{{ archivo.nombre }}</p>
+            <p class="text-[11px] text-slate-400">
+              {{ archivo.tamanoLegible }} · tope {{ topeLegible }}
+            </p>
+            @if (archivo.motivo; as causa) {
+              <p class="mt-0.5 text-[11px] font-semibold text-red-600">{{ causa }}</p>
+            }
+          </div>
+          <button
+            type="button"
+            class="boton-tenue !px-2 !py-1"
+            [attr.aria-label]="'Quitar ' + archivo.nombre"
+            (click)="quitar(archivo.id)"
+          >
+            ✕
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

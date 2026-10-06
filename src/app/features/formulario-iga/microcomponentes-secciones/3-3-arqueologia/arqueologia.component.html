@@ -1,0 +1,191 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR OBLIGATORIA DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Arqueología y Patrimonio Cultural' }}</h1>
+    <p class="bajada">
+      Declare la situación arqueológica del área efectiva del proyecto y adjunte la certificación
+      oficial (CIRA) o el Plan de Monitoreo Arqueológico (PMA) correspondiente.
+    </p>
+  </div>
+
+  <div class="space-y-6 mt-6">
+    <!-- PREGUNTA INICIAL: DISPARADOR CONDICIONAL -->
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-inner">
+      <label
+        class="block text-xs font-black text-slate-700 uppercase tracking-wide mb-3 select-none"
+      >
+        ¿El área efectiva del proyecto cuenta con Certificado de Inexistencia de Restos
+        Arqueológicos (CIRA)?
+        <span class="text-red-500">*</span>
+      </label>
+      <div class="flex gap-4 select-none">
+        <label class="flex items-center gap-2 cursor-pointer font-bold text-xs text-slate-800">
+          <input
+            type="radio"
+            name="cuentaConCira"
+            [value]="true"
+            [ngModel]="tieneCira()"
+            (ngModelChange)="tieneCira.set($event); alCambiarOpcionBifurcacion()"
+            class="h-4 w-4 text-amber-600 focus:ring-amber-500/20"
+          />
+          Sí, cuenta con CIRA aprobado
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer font-bold text-xs text-slate-800">
+          <input
+            type="radio"
+            name="cuentaConCira"
+            [value]="false"
+            [ngModel]="tieneCira()"
+            (ngModelChange)="tieneCira.set($event); alCambiarOpcionBifurcacion()"
+            class="h-4 w-4 text-amber-600 focus:ring-amber-500/20"
+          />
+          No, aplica Plan de Monitoreo Arqueológico (PMA)
+        </label>
+      </div>
+
+      <!--
+        Aviso normativo: mientras la bifurcación no tenga su sustento completo,
+        la sección no puede pasar a semáforo conforme.
+      -->
+      @if (!formularioValido()) {
+        <p class="aviso-bifurcacion" role="status">
+          Aviso: Para obtener la autorización de inicio de actividades, es obligatorio declarar el
+          sustento del CIRA o del PMA según la normativa sectorial vigente.
+        </p>
+      }
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- ESCENARIO A: CUENTA CON CIRA APROBADO                      -->
+    <!-- ========================================================== -->
+    @if (tieneCira() === true) {
+      <div
+        class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4 animate-fade-in"
+      >
+        <h5
+          class="text-xs font-black text-emerald-600 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2 mb-2 select-none"
+        >
+          <span>📜</span> Datos del Certificado CIRA (Ministerio de Cultura)
+        </h5>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              class="block uppercase mb-1.5 text-[10px] text-slate-500 font-bold tracking-wide"
+            >
+              N° de Resolución CIRA *
+            </label>
+            <input
+              type="text"
+              [ngModel]="numResolucion()"
+              (ngModelChange)="numResolucion.set($event)"
+              placeholder="Ej. RD N° 0123-2024-DGPA-VMPCIC/MC"
+              class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:bg-white focus:border-amber-500 focus:outline-none shadow-inner"
+            />
+          </div>
+          <div>
+            <label
+              class="block uppercase mb-1.5 text-[10px] text-slate-500 font-bold tracking-wide"
+            >
+              Fecha de Emisión Oficial *
+            </label>
+            <input
+              type="date"
+              [ngModel]="fechaEmision()"
+              (ngModelChange)="fechaEmision.set($event)"
+              class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:bg-white focus:border-amber-500 focus:outline-none shadow-inner"
+            />
+          </div>
+        </div>
+        <div class="pt-2">
+          <label class="block uppercase mb-1.5 text-[10px] text-slate-400 font-black tracking-wide">
+            Adjuntar Resolución CIRA (Formatos admitidos: PDF, Máx 50MB) *
+          </label>
+          <app-smart-uploader
+            [numero]="numero()"
+            [aceptarExtensiones]="'.pdf'"
+            [multiple]="false"
+            [embebido]="true"
+          />
+        </div>
+      </div>
+    }
+
+    <!-- ========================================================== -->
+    <!-- ESCENARIO B: NO CUENTA CON CIRA / APLICA PMA               -->
+    <!-- ========================================================== -->
+    @if (tieneCira() === false) {
+      <div
+        class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4 animate-fade-in"
+      >
+        <h5
+          class="text-xs font-black text-blue-600 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2 mb-2 select-none"
+        >
+          <span>🛡️</span> Datos del Plan de Monitoreo Arqueológico (PMA)
+        </h5>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              class="block uppercase mb-1.5 text-[10px] text-slate-500 font-bold tracking-wide"
+            >
+              Código de Expediente o N° Autorización PMA *
+            </label>
+            <input
+              type="text"
+              [ngModel]="numResolucion()"
+              (ngModelChange)="numResolucion.set($event)"
+              placeholder="Ej. EXP-PMA-N° 2024-045"
+              class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:bg-white focus:border-amber-500 focus:outline-none shadow-inner"
+            />
+          </div>
+          <div>
+            <label
+              class="block uppercase mb-1.5 text-[10px] text-slate-500 font-bold tracking-wide"
+            >
+              Estado del Trámite PMA *
+            </label>
+            <select
+              [ngModel]="estadoTramitePma()"
+              (ngModelChange)="estadoTramitePma.set($event)"
+              class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:border-amber-500 focus:outline-none shadow-inner"
+            >
+              <option value="" disabled>-- Seleccione el Estado Actual --</option>
+              <option value="APROBADO">Aprobado con Resolución Oficial</option>
+              <option value="EN_TRAMITE">En Trámite / Presentado ante el MINCUL</option>
+            </select>
+          </div>
+        </div>
+        <div class="pt-2">
+          <label class="block uppercase mb-1.5 text-[10px] text-slate-400 font-black tracking-wide">
+            Adjuntar Documento PMA o Cargo de Presentación (Máx 50MB) *
+          </label>
+          <app-smart-uploader
+            [numero]="numero()"
+            [aceptarExtensiones]="'.pdf'"
+            [multiple]="false"
+            [embebido]="true"
+          />
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Acuse de recibo del guardado -->
+  @if (guardado()) {
+    <p class="aviso-guardado" role="status">
+      Sección 3.3 validada. El sustento arqueológico (CIRA o PMA) queda suscrito en el expediente.
+    </p>
+  }
+
+  <!-- Botonera de Validación de la Sección -->
+  <div class="pt-4 mt-6 flex justify-end border-t border-slate-100">
+    <button
+      type="button"
+      (click)="guardarYValidarArqueologiaSeccion()"
+      [disabled]="!formularioValido()"
+      class="boton-validar"
+    >
+      Guardar y Validar Sección {{ numero() }}
+    </button>
+  </div>
+</section>

@@ -1,0 +1,928 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR OBLIGATORIA DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección 2.7</p>
+    <h1 class="titulo">Descripción de los Componentes del Proyecto</h1>
+    <p class="bajada">
+      Registre y administre las plataformas de perforación diamantina y sus respectivos sondajes de
+      forma centralizada.
+    </p>
+  </div>
+
+  <div class="space-y-6 mt-6">
+    <!-- ========================================================== -->
+    <!-- GRILLA ÚNICA PRINCIPAL EN PANTALLA                         -->
+    <!-- ========================================================== -->
+    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div>
+          <h5 class="text-xs font-black text-slate-800 uppercase tracking-wider">
+            🚜 Inventario de Plataformas Autorizadas
+          </h5>
+          <p class="text-[10px] text-amber-600 font-bold uppercase mt-0.5 contador-bloque">
+            {{ plataformas().length }} de {{ MAXIMO_PLATAFORMAS }} Plataformas Máximo Permisibles
+          </p>
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <input
+            #fileCsv
+            type="file"
+            accept=".csv"
+            class="hidden"
+            (change)="alImportarCSVPlataformas($event)"
+          />
+          <button
+            type="button"
+            (click)="fileCsv.click()"
+            class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs uppercase shadow-sm cursor-pointer"
+          >
+            📥 Importar CSV
+          </button>
+          <button
+            type="button"
+            (click)="abrirModalNuevaPlataforma()"
+            [disabled]="plataformas().length >= MAXIMO_PLATAFORMAS"
+            class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-slate-950 font-black rounded-lg text-xs tracking-wide uppercase shadow-sm cursor-pointer"
+          >
+            ＋ Añadir Plataforma
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla Única y Limpia de Resumen -->
+      <div class="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+        <table class="w-full text-left text-xs border-collapse tabla-plataformas">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+            >
+              <th class="p-3 w-12 text-center">N°</th>
+              <th class="p-3">Plataforma</th>
+              <th class="p-3">Coordenadas UTM (Este / Norte)</th>
+              <th class="p-3 w-24">Altitud</th>
+              <th class="p-3">Cuerpo de Agua / Distancia</th>
+              <th class="p-3 w-28 text-center">Sondajes</th>
+              <th class="p-3 w-32 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (plat of plataformas(); track plat.id; let i = $index) {
+              <tr
+                class="border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-colors font-medium"
+              >
+                <td class="p-3 text-slate-400 font-mono font-bold text-center">{{ i + 1 }}</td>
+                <td class="p-3 font-black text-slate-900">{{ plat.nombre }}</td>
+                <td class="p-3 font-mono text-slate-600">
+                  {{ plat.este | number: '1.0-0' }} E / {{ plat.norte | number: '1.0-0' }} N
+                </td>
+                <td class="p-3 font-mono text-slate-600">{{ plat.altitud | number: '1.0-0' }} m</td>
+                <td class="p-3 text-slate-600">
+                  {{ plat.cuerpoAgua || 'Ninguno' }} ({{ plat.distanciaAgua | number: '1.0-0' }}m)
+                </td>
+                <td class="p-3 text-center">
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-black"
+                    [class.bg-emerald-50]="plat.sondajes.length > 0"
+                    [class.text-emerald-600]="plat.sondajes.length > 0"
+                    [class.bg-red-50]="plat.sondajes.length === 0"
+                    [class.text-red-500]="plat.sondajes.length === 0"
+                  >
+                    {{ plat.sondajes.length }} ddh
+                  </span>
+                </td>
+                <td class="p-3 text-center space-x-1">
+                  <button
+                    type="button"
+                    (click)="abrirModalEditarPlataforma(plat)"
+                    [attr.aria-label]="'Editar ' + (plat.nombre || 'plataforma')"
+                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="removerPlataformaCompleta(plat.id)"
+                    [attr.aria-label]="'Eliminar ' + (plat.nombre || 'plataforma')"
+                    class="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✕ Eliminar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="p-4 text-center text-slate-400 font-medium bg-white">
+                  No hay plataformas registradas en el expediente.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- GRILLA 2: COMPONENTES AUXILIARES (MODO LECTURA LIMPIO)     -->
+    <!-- ========================================================== -->
+    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <h5
+          class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5"
+        >
+          <span>⛺</span> 2. Inventario de Componentes Auxiliares
+        </h5>
+        <button
+          type="button"
+          (click)="abrirModalAuxiliar(null)"
+          class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-lg text-xs tracking-wide uppercase shadow-sm cursor-pointer"
+        >
+          ＋ Añadir Auxiliar
+        </button>
+      </div>
+
+      <div class="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+        <table class="w-full text-left text-xs border-collapse tabla-auxiliares">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+            >
+              <th class="p-3 w-12 text-center">Ítem</th>
+              <th class="p-3">Componente Auxiliar</th>
+              <th class="p-3">Coordenadas UTM (Este / Norte)</th>
+              <th class="p-3 w-24">Altitud</th>
+              <th class="p-3">Cuerpo de Agua / Distancia</th>
+              <th class="p-3 w-32 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (aux of auxiliares(); track aux.id; let i = $index) {
+              <tr
+                class="border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-colors font-medium"
+              >
+                <td class="p-3 text-slate-400 font-mono font-bold text-center">{{ i + 1 }}</td>
+                <td class="p-3 font-bold text-slate-800">{{ aux.nombre }}</td>
+                <td class="p-3 font-mono text-slate-600">
+                  {{ aux.este | number: '1.0-0' }} E / {{ aux.norte | number: '1.0-0' }} N
+                </td>
+                <td class="p-3 font-mono text-slate-600">{{ aux.altitud | number: '1.0-0' }} m</td>
+                <td class="p-3 text-slate-600">
+                  {{ aux.cuerpoAgua || 'Ninguno' }} ({{ aux.distanciaAgua | number: '1.0-0' }}m)
+                </td>
+                <td class="p-3 text-center space-x-1">
+                  <button
+                    type="button"
+                    (click)="abrirModalAuxiliar(aux)"
+                    [attr.aria-label]="'Editar ' + (aux.nombre || 'auxiliar')"
+                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="removerAuxiliarCompleto(aux.id)"
+                    [attr.aria-label]="'Eliminar ' + (aux.nombre || 'auxiliar')"
+                    class="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✕ Eliminar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="p-4 text-center text-slate-400 font-medium bg-white">
+                  No hay componentes auxiliares declarados.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- GRILLA 3: DIMENSIONES DE LOS COMPONENTES (MODO LECTURA)    -->
+    <!-- ========================================================== -->
+    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <h5
+          class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5"
+        >
+          <span>📐</span> 3. Dimensiones, Áreas y Volúmenes Totales
+        </h5>
+        <div class="flex items-center gap-3">
+          <!-- El resumen del expediente no es un input: resume las filas ya
+               grabadas, así que puede convivir con la tabla en solo lectura. -->
+          <p class="text-[10px] font-bold text-slate-400 uppercase">
+            Totales: {{ areaTotalGeneral() | number: '1.2-2' }} m² ·
+            {{ volumenTotalGeneral() | number: '1.2-2' }} m³
+          </p>
+          <button
+            type="button"
+            (click)="abrirModalDimension(null)"
+            class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-lg text-xs tracking-wide uppercase shadow-sm cursor-pointer"
+          >
+            ＋ Añadir Dimensión
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+        <table class="w-full text-left text-xs border-collapse tabla-dimensiones">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+            >
+              <th class="p-3">Componente Evaluado</th>
+              <th class="p-3 text-center">Dimensiones (A x L x P)</th>
+              <th class="p-3 text-center">Área Unit.</th>
+              <th class="p-3 text-center">Cantidad</th>
+              <th class="p-3 text-center text-slate-900 font-black">Área Total</th>
+              <th class="p-3 text-center text-amber-700 font-black">Volumen Total</th>
+              <th class="p-3 w-32 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (dim of dimensiones(); track dim.id) {
+              <tr
+                class="border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-colors font-medium"
+              >
+                <td class="p-3 font-bold text-slate-800">{{ dim.nombreComponente }}</td>
+                <td class="p-3 font-mono text-center text-slate-600">
+                  {{ dim.ancho | number: '1.0-2' }}m x {{ dim.largo | number: '1.0-2' }}m x
+                  {{ dim.profundidad | number: '1.0-2' }}m
+                </td>
+                <td class="p-3 font-mono text-center text-slate-500">
+                  {{ areaDe(dim) | number: '1.2-2' }} m²
+                </td>
+                <td class="p-3 font-mono font-bold text-center text-slate-800">
+                  {{ dim.cantidad | number: '1.0-0' }} ud.
+                </td>
+                <td class="p-3 font-mono font-black text-center text-slate-900 bg-slate-50/30">
+                  {{ areaTotalDe(dim) | number: '1.2-2' }} m²
+                </td>
+                <td class="p-3 font-mono font-black text-center text-amber-700 bg-amber-500/[0.01]">
+                  {{ volumenTotalDe(dim) | number: '1.2-2' }} m³
+                </td>
+                <td class="p-3 text-center space-x-1">
+                  <button
+                    type="button"
+                    (click)="abrirModalDimension(dim)"
+                    [attr.aria-label]="'Editar ' + (dim.nombreComponente || 'dimensión')"
+                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="removerDimensionCompleta(dim.id)"
+                    [attr.aria-label]="'Eliminar ' + (dim.nombreComponente || 'dimensión')"
+                    class="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold rounded text-[11px] cursor-pointer"
+                  >
+                    ✕ Eliminar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="p-4 text-center text-slate-400 font-medium bg-white">
+                  No hay registros de dimensionamiento declarados.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTONERA DE VALIDACION -->
+  <div class="acciones">
+    <!-- El aviso de la última acción y el motivo de bloqueo son dos cosas
+         distintas: uno dice lo que acaba de pasar, el otro lo que falta. Se
+         muestran juntos para que un mensaje no tape al otro. -->
+    <div class="flex-1">
+      @if (mensaje(); as aviso) {
+        <p class="aviso">{{ aviso }}</p>
+      }
+      @if (bloqueo(); as pendiente) {
+        <p class="pendiente">{{ pendiente }}</p>
+      } @else {
+        <p class="pendiente pendiente--lista">Matriz lista para validar.</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="boton-validar"
+      [disabled]="!matrizValida()"
+      (click)="guardarYValidarComponentesSeccion()"
+    >
+      Guardar y Validar Componentes
+    </button>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- POPUP CENTRALIZADO CRUD: COORDENADAS + MINI-TABLA DE SONDAJES -->
+  <!-- ========================================================== -->
+  @if (modalPlatAbierto()) {
+    <div
+      class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-modal-plataforma"
+    >
+      @if (modalPlatData(); as datos) {
+        <div
+          class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-2xl animate-zoom-in max-h-[85vh] overflow-y-auto flex flex-col"
+        >
+          <!-- Cabecera del Popup -->
+          <div
+            class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 select-none"
+          >
+            <h4
+              id="titulo-modal-plataforma"
+              class="text-sm font-black text-slate-900 uppercase tracking-tight"
+            >
+              {{ modalEsEdicion() ? 'Editar Plataforma' : 'Nueva Plataforma' }}
+            </h4>
+            <button
+              type="button"
+              (click)="cerrarModalPlataforma()"
+              aria-label="Cerrar"
+              class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Cuerpo: PARTE 1 (DATOS PROPIOS DE LA PLATAFORMA - FORMULARIO FICHA) -->
+          <div class="space-y-4 text-xs font-bold text-slate-700 flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label
+                  for="modal-plat-nombre"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Nombre Plataforma *
+                </label>
+                <input
+                  id="modal-plat-nombre"
+                  type="text"
+                  placeholder="Ej. PLA-01"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-black shadow-inner"
+                  [ngModel]="datos.nombre"
+                  (ngModelChange)="editarBorrador('nombre', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-plat-este"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Este (X) UTM *
+                </label>
+                <input
+                  id="modal-plat-este"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+                  [ngModel]="datos.este"
+                  (ngModelChange)="editarBorrador('este', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-plat-norte"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Norte (Y) UTM *
+                </label>
+                <input
+                  id="modal-plat-norte"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+                  [ngModel]="datos.norte"
+                  (ngModelChange)="editarBorrador('norte', $event)"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label
+                  for="modal-plat-altitud"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Altitud (m)
+                </label>
+                <input
+                  id="modal-plat-altitud"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none shadow-inner"
+                  [ngModel]="datos.altitud"
+                  (ngModelChange)="editarBorrador('altitud', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-plat-agua"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Cuerpo de Agua Próximo
+                </label>
+                <input
+                  id="modal-plat-agua"
+                  type="text"
+                  placeholder="Ej. Quebrada Verde"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none shadow-inner"
+                  [ngModel]="datos.cuerpoAgua"
+                  (ngModelChange)="editarBorrador('cuerpoAgua', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-plat-distancia"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Distancia al Agua (m)
+                </label>
+                <input
+                  id="modal-plat-distancia"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none shadow-inner"
+                  [ngModel]="datos.distanciaAgua"
+                  (ngModelChange)="editarBorrador('distanciaAgua', $event)"
+                />
+              </div>
+            </div>
+
+            <!-- PARTE 2 (MINI-TABLA DINÁMICA DE SONDAJES DENTRO DEL POPUP) -->
+            <div class="pt-4 border-t border-slate-100">
+              <div class="flex justify-between items-center mb-2 px-1 select-none">
+                <span
+                  class="text-[10px] font-black text-slate-400 uppercase tracking-wider"
+                  id="etiqueta-sondajes-modal"
+                >
+                  Perforaciones Diamantinas Vinculadas (Sondajes)
+                </span>
+                <button
+                  type="button"
+                  (click)="agregarSondajeEnModal()"
+                  class="text-[10px] font-bold text-amber-600 hover:text-amber-700 underline flex items-center gap-0.5 cursor-pointer"
+                >
+                  ＋ Añadir Sondaje
+                </button>
+              </div>
+
+              <div
+                class="overflow-hidden border border-slate-200 rounded-xl bg-white max-h-[180px] overflow-y-auto shadow-inner"
+              >
+                <table
+                  class="w-full text-left text-xs border-collapse tabla-sondajes"
+                  aria-labelledby="etiqueta-sondajes-modal"
+                >
+                  <thead>
+                    <tr
+                      class="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[9px] sticky top-0 z-10 select-none"
+                    >
+                      <th class="p-2 w-10 text-center">#</th>
+                      <th class="p-2 w-40">Código Sondaje *</th>
+                      <th class="p-2">Profundidad (m) *</th>
+                      <th class="p-2 w-24">Inclinación (°)</th>
+                      <th class="p-2 w-24">Azimut (°)</th>
+                      <th class="p-2 w-10 text-center">✕</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (sondaje of datos.sondajes; track sondaje.id; let idx = $index) {
+                      <tr class="border-b border-slate-100">
+                        <td class="p-2 text-slate-400 font-mono font-bold text-center select-none">
+                          {{ idx + 1 }}
+                        </td>
+                        <td class="p-1">
+                          <input
+                            type="text"
+                            placeholder="DDH-01"
+                            class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-md font-mono text-xs font-bold text-slate-800 focus:bg-white focus:outline-none"
+                            [ngModel]="sondaje.codigo"
+                            (ngModelChange)="editarSondajeEnModal(sondaje.id, 'codigo', $event)"
+                          />
+                        </td>
+                        <td class="p-1">
+                          <input
+                            type="number"
+                            placeholder="0"
+                            class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-md font-mono text-xs text-slate-700 focus:bg-white focus:outline-none"
+                            [ngModel]="sondaje.profundidad"
+                            (ngModelChange)="
+                              editarSondajeEnModal(sondaje.id, 'profundidad', $event)
+                            "
+                          />
+                        </td>
+                        <td class="p-1">
+                          <input
+                            type="number"
+                            placeholder="0°"
+                            class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-md font-mono text-xs text-slate-700 focus:bg-white focus:outline-none"
+                            [ngModel]="sondaje.inclinacion"
+                            (ngModelChange)="
+                              editarSondajeEnModal(sondaje.id, 'inclinacion', $event)
+                            "
+                          />
+                        </td>
+                        <td class="p-1">
+                          <input
+                            type="number"
+                            placeholder="0°"
+                            class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-md font-mono text-xs text-slate-700 focus:bg-white focus:border-amber-500 focus:outline-none"
+                            [ngModel]="sondaje.azimut"
+                            (ngModelChange)="editarSondajeEnModal(sondaje.id, 'azimut', $event)"
+                          />
+                        </td>
+                        <td class="p-1 text-center">
+                          <button
+                            type="button"
+                            (click)="removerSondajeEnModal(sondaje.id)"
+                            [attr.aria-label]="
+                              'Quitar ' + (sondaje.codigo || 'sondaje ' + (idx + 1))
+                            "
+                            class="text-slate-400 hover:text-red-500 font-bold text-xs cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td
+                          colspan="6"
+                          class="p-3 text-center text-[11px] text-red-500 bg-red-50/[0.01] font-bold"
+                        >
+                          ⚠️ Se requiere declarar mínimo un (1) sondaje diamantino para validar esta
+                          plataforma.
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botonera de Control del Popup -->
+          <div class="pt-4 mt-6 border-t border-slate-100 flex justify-end gap-2 select-none">
+            @if (bloqueoModal(); as motivo) {
+              <p class="pendiente mr-auto">{{ motivo }}</p>
+            }
+            <button
+              type="button"
+              (click)="cerrarModalPlataforma()"
+              class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              (click)="procesarGuardadoPlataformaModal()"
+              [disabled]="!modalPlatDataValido()"
+              class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-xl text-xs uppercase shadow-sm cursor-pointer disabled:from-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+            >
+              Grabar Componente
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ========================================================== -->
+  <!-- POPUP CENTRALIZADO CRUD: COMPONENTES AUXILIARES            -->
+  <!-- ========================================================== -->
+  @if (modalAuxAbierto()) {
+    <div
+      class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-modal-auxiliar"
+    >
+      @if (modalAuxData(); as datos) {
+        <div
+          class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-md animate-zoom-in"
+        >
+          <!-- Cabecera del Popup -->
+          <div
+            class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 select-none"
+          >
+            <h4
+              id="titulo-modal-auxiliar"
+              class="text-xs font-black text-slate-900 uppercase tracking-tight"
+            >
+              {{ modalAuxEsEdicion() ? 'Editar Auxiliar' : 'Formulario de Componente Auxiliar' }}
+            </h4>
+            <button
+              type="button"
+              (click)="cerrarModalAuxiliar()"
+              aria-label="Cerrar"
+              class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Campos del Formulario -->
+          <div class="space-y-4 text-xs font-bold text-slate-700">
+            <div>
+              <label
+                for="modal-aux-nombre"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                Nombre Componente Auxiliar *
+              </label>
+              <input
+                id="modal-aux-nombre"
+                type="text"
+                placeholder="Ej. Almacén de Testigos"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-bold shadow-inner"
+                [ngModel]="datos.nombre"
+                (ngModelChange)="editarBorradorAuxiliar('nombre', $event)"
+              />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  for="modal-aux-este"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Este (X) UTM *
+                </label>
+                <input
+                  id="modal-aux-este"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+                  [ngModel]="datos.este"
+                  (ngModelChange)="editarBorradorAuxiliar('este', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-aux-norte"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Norte (Y) UTM *
+                </label>
+                <input
+                  id="modal-aux-norte"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+                  [ngModel]="datos.norte"
+                  (ngModelChange)="editarBorradorAuxiliar('norte', $event)"
+                />
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="col-span-1">
+                <label
+                  for="modal-aux-altitud"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Altitud (m)
+                </label>
+                <input
+                  id="modal-aux-altitud"
+                  type="number"
+                  placeholder="0"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none shadow-inner"
+                  [ngModel]="datos.altitud"
+                  (ngModelChange)="editarBorradorAuxiliar('altitud', $event)"
+                />
+              </div>
+              <div class="col-span-2">
+                <label
+                  for="modal-aux-agua"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Cuerpo de Agua Próximo
+                </label>
+                <input
+                  id="modal-aux-agua"
+                  type="text"
+                  placeholder="Ej. Laguna Esmeralda"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none shadow-inner"
+                  [ngModel]="datos.cuerpoAgua"
+                  (ngModelChange)="editarBorradorAuxiliar('cuerpoAgua', $event)"
+                />
+              </div>
+            </div>
+            <div>
+              <label
+                for="modal-aux-distancia"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                Distancia al Cuerpo de Agua (m)
+              </label>
+              <input
+                id="modal-aux-distancia"
+                type="number"
+                placeholder="Ej. 210"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none shadow-inner"
+                [ngModel]="datos.distanciaAgua"
+                (ngModelChange)="editarBorradorAuxiliar('distanciaAgua', $event)"
+              />
+            </div>
+          </div>
+
+          <!-- Botonera del Popup -->
+          <div class="pt-4 mt-6 border-t border-slate-100 flex justify-end gap-2 select-none">
+            @if (bloqueoAuxModal(); as motivo) {
+              <p class="pendiente mr-auto">{{ motivo }}</p>
+            }
+            <button
+              type="button"
+              (click)="cerrarModalAuxiliar()"
+              class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              (click)="procesarGuardadoAuxiliarModal()"
+              [disabled]="!modalAuxDataValido()"
+              class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-xl text-xs uppercase shadow-sm cursor-pointer disabled:from-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+            >
+              Grabar Auxiliar
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ========================================================== -->
+  <!-- POPUP CENTRALIZADO CRUD: DIMENSIONES DE COMPONENTES        -->
+  <!-- ========================================================== -->
+  @if (modalDimAbierto()) {
+    <div
+      class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-modal-dimension"
+    >
+      @if (modalDimData(); as datos) {
+        <div
+          class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-md animate-zoom-in"
+        >
+          <!-- Cabecera del Popup -->
+          <div
+            class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 select-none"
+          >
+            <h4
+              id="titulo-modal-dimension"
+              class="text-xs font-black text-slate-900 uppercase tracking-tight"
+            >
+              {{
+                modalDimEsEdicion() ? 'Editar Dimensionamiento' : 'Formulario de Dimensionamiento'
+              }}
+            </h4>
+            <button
+              type="button"
+              (click)="cerrarModalDimension()"
+              aria-label="Cerrar"
+              class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Campos del Formulario (Inputs Técnicos) -->
+          <div class="space-y-4 text-xs font-bold text-slate-700">
+            <div>
+              <label
+                for="modal-dim-nombre"
+                class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >
+                Nombre / Tipo de Componente *
+              </label>
+              <input
+                id="modal-dim-nombre"
+                type="text"
+                placeholder="Ej. Pozas de sedimentación"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-bold shadow-inner"
+                [ngModel]="datos.nombreComponente"
+                (ngModelChange)="editarBorradorDimension('nombreComponente', $event)"
+              />
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label
+                  for="modal-dim-ancho"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Ancho (m) *
+                </label>
+                <input
+                  id="modal-dim-ancho"
+                  type="number"
+                  placeholder="0.00"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none shadow-inner"
+                  [ngModel]="datos.ancho"
+                  (ngModelChange)="editarBorradorDimension('ancho', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-dim-largo"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Largo (m) *
+                </label>
+                <input
+                  id="modal-dim-largo"
+                  type="number"
+                  placeholder="0.00"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none shadow-inner"
+                  [ngModel]="datos.largo"
+                  (ngModelChange)="editarBorradorDimension('largo', $event)"
+                />
+              </div>
+              <div>
+                <label
+                  for="modal-dim-profundidad"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Profund. Prom. (m)
+                </label>
+                <input
+                  id="modal-dim-profundidad"
+                  type="number"
+                  placeholder="0.00"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none shadow-inner"
+                  [ngModel]="datos.profundidad"
+                  (ngModelChange)="editarBorradorDimension('profundidad', $event)"
+                />
+              </div>
+            </div>
+            <div
+              class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 bg-slate-50/50 p-2 rounded-xl"
+            >
+              <!-- El área aparece mientras se teclea para que el titular vea
+                   la consecuencia de ancho x largo sin salir del formulario.
+                   Se deriva al leer, no se guarda: guardado se desfasaría al
+                   cambiar cualquiera de sus factores. -->
+              <div>
+                <span class="block uppercase mb-0.5 text-[9px] text-slate-400 font-black">
+                  Área Unit. Calculada
+                </span>
+                <span class="block font-mono font-black text-slate-800 text-sm">
+                  {{ (datos.ancho ?? 0) * (datos.largo ?? 0) | number: '1.2-2' }} m²
+                </span>
+              </div>
+              <div>
+                <label
+                  for="modal-dim-cantidad"
+                  class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+                >
+                  Cantidad (ud.) *
+                </label>
+                <input
+                  id="modal-dim-cantidad"
+                  type="number"
+                  min="1"
+                  placeholder="1"
+                  class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 font-mono font-black text-center focus:outline-none shadow-inner"
+                  [ngModel]="datos.cantidad"
+                  (ngModelChange)="editarBorradorDimension('cantidad', $event)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Botonera del Popup -->
+          <div class="pt-4 mt-6 border-t border-slate-100 flex justify-end gap-2 select-none">
+            @if (bloqueoDimModal(); as motivo) {
+              <p class="pendiente mr-auto">{{ motivo }}</p>
+            }
+            <button
+              type="button"
+              (click)="cerrarModalDimension()"
+              class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              (click)="procesarGuardadoDimensionModal()"
+              [disabled]="!modalDimDataValido()"
+              class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-xl text-xs uppercase shadow-sm cursor-pointer disabled:from-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+            >
+              Grabar Dimensión
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

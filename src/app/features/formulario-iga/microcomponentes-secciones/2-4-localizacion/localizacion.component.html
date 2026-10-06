@@ -1,0 +1,166 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Localización Geográfica y Política' }}</h1>
+    <p class="bajada">
+      Visualice el ubigeo político calculado por el sistema y registre las coordenadas del punto
+      central de la campaña de exploración.
+    </p>
+  </div>
+
+  <div class="space-y-6 mt-6">
+    <!-- BLOQUE 1: UBICACIÓN POLÍTICA (MODO CONSULTA) -->
+    <div class="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5">
+      <h5
+        class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5"
+      >
+        <span>📍</span> Ubicación Política del Proyecto (Cálculo Espacial)
+      </h5>
+
+      <div
+        class="marco-tabla overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-inner"
+      >
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]"
+            >
+              <th class="p-3 min-w-40">Región / Departamento</th>
+              <th class="p-3 min-w-36">Provincia</th>
+              <th class="p-3 min-w-36">Distrito</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (store.ubigeo(); as ubigeo) {
+              <tr class="font-semibold text-slate-800">
+                <td class="p-3">{{ ubigeo.departamento }}</td>
+                <td class="p-3">{{ ubigeo.provincia }}</td>
+                <td class="p-3">{{ ubigeo.distrito }}</td>
+              </tr>
+            } @else {
+              <tr>
+                <td colspan="3" class="p-4 text-center text-slate-400 font-medium bg-white">
+                  ⏱️ Pendiente de cálculo espacial. Complete las coordenadas del Área Efectiva en la
+                  Sección 2.5 para heredar automáticamente el Ubigeo Político.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BLOQUE 2: PUNTOS CENTRALES DEL PROYECTO (REGISTRO MANUAL) -->
+    <div class="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5">
+      <h5
+        class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-4 flex items-center gap-1.5"
+      >
+        <span>🎯</span> Coordenadas Centrales y Centro Poblado Colindante
+      </h5>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Campo: Este (X) -->
+        <div>
+          <label
+            for="esteCentral"
+            class="mb-1.5 block text-[11px] font-bold text-slate-600 uppercase tracking-wide"
+            >Este (X) UTM <span class="text-red-500">*</span></label
+          >
+          <input
+            id="esteCentral"
+            type="number"
+            [value]="esteCentral()"
+            (input)="alEscribirEste($event)"
+            placeholder="Ej. 434025"
+            class="campo-cordenada"
+          />
+          <p class="pista" [class.pista--error]="esteFueraDeRango()">
+            @if (esteFueraDeRango()) {
+              Fuera del rango {{ rangoEste() }}
+            } @else {
+              Rango {{ rangoEste() }}
+            }
+          </p>
+        </div>
+
+        <!-- Campo: Norte (Y) -->
+        <div>
+          <label
+            for="norteCentral"
+            class="mb-1.5 block text-[11px] font-bold text-slate-600 uppercase tracking-wide"
+            >Norte (Y) UTM <span class="text-red-500">*</span></label
+          >
+          <input
+            id="norteCentral"
+            type="number"
+            [value]="norteCentral()"
+            (input)="alEscribirNorte($event)"
+            placeholder="Ej. 8676750"
+            class="campo-cordenada"
+          />
+          <p class="pista" [class.pista--error]="norteFueraDeRango()">
+            @if (norteFueraDeRango()) {
+              Fuera del rango {{ rangoNorte() }}
+            } @else {
+              Rango {{ rangoNorte() }}
+            }
+          </p>
+        </div>
+
+        <!-- Campo: Selector de Zona UTM -->
+        <div>
+          <label
+            for="zonaCentral"
+            class="mb-1.5 block text-[11px] font-bold text-slate-600 uppercase tracking-wide"
+            >Zona UTM <span class="text-red-500">*</span></label
+          >
+          <select id="zonaCentral" (change)="alElegirZona($event)" class="campo-cordenada">
+            <option value="" [selected]="zonaCentral() === ''" disabled>-- Seleccione --</option>
+            @for (zona of zonas; track zona) {
+              <option [value]="zona" [selected]="zonaCentral() === zona">Zona {{ zona }}</option>
+            }
+          </select>
+          <p class="pista">Proyección WGS84 / UTM</p>
+        </div>
+
+        <!-- Campo: Nombre del Poblado -->
+        <div>
+          <label
+            for="nombrePoblado"
+            class="mb-1.5 block text-[11px] font-bold text-slate-600 uppercase tracking-wide"
+            >Nombre del Poblado <span class="text-red-500">*</span></label
+          >
+          <input
+            id="nombrePoblado"
+            type="text"
+            [value]="nombrePoblado()"
+            (input)="alEscribirPoblado($event)"
+            placeholder="Ej. CC.NN. San Antonio"
+            class="campo-cordenada campo-cordenada--texto"
+          />
+          <p class="pista">Centro poblado colindante</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Acuse de recibo del guardado -->
+  @if (guardado()) {
+    <p class="aviso-guardado" role="status">
+      Sección {{ numero() }} validada. El punto central queda georreferenciado en el expediente.
+    </p>
+  }
+
+  <!-- Botonera de Validación de la Sección -->
+  <div class="pt-4 mt-6 flex justify-end border-t border-slate-100">
+    <button
+      type="button"
+      (click)="guardarYValidarSeccion()"
+      [disabled]="!formularioValido()"
+      class="boton-oro"
+    >
+      Guardar y Validar Sección {{ numero() }}
+    </button>
+  </div>
+</section>

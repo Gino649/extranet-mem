@@ -1,0 +1,142 @@
+<section class="tarjeta">
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Antecedentes y Derechos Mineros' }}</h1>
+    <p class="bajada">
+      Relación de concesiones mineras superpuestas o colindantes al área del proyecto de
+      exploración.
+    </p>
+  </div>
+
+  <div class="space-y-6">
+    <!-- NOTA TÉCNICA DE ASISTENCIA (CRÍTICA) -->
+    <div
+      class="p-4 bg-amber-50/60 border border-amber-200/80 rounded-xl text-xs flex items-start gap-2.5 shadow-sm"
+    >
+      <span class="text-base mt-0.5">💡</span>
+      <div>
+        <h5 class="font-bold text-amber-800 uppercase tracking-wider text-[10px] mb-0.5">
+          Nota de Validación Catastral Automatizada
+        </h5>
+        <p class="text-slate-600 font-medium leading-relaxed">
+          Los datos de las grillas inferiores se calculan y listan de forma
+          <strong class="text-slate-900 font-bold">100% automática</strong>. Al guardar el polígono
+          cartográfico en la
+          <strong class="text-slate-900 font-bold"
+            >Sección 2.5 (Delimitación del Área Efectiva)</strong
+          >, el motor de intersección espacial del backend cruzará las coordenadas con el Catastro
+          Minero Nacional (INGEMMET) e inyectará las concesiones del titular y de terceros
+          superpuestos de forma inmutable aquí.
+        </p>
+      </div>
+    </div>
+
+    <!-- GRILLA A: DERECHOS MINEROS DEL SOLICITANTE -->
+    <div class="marco-grilla bg-slate-50/50 border border-slate-200/60 rounded-xl p-5">
+      <h5
+        class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5"
+      >
+        <span>⛏️</span> Derechos Mineros del Solicitante (Titular)
+      </h5>
+
+      <div
+        class="marco-tabla overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-inner"
+      >
+        <table class="w-full text-left text-[11px] border-collapse">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[9px]"
+            >
+              <th class="p-3 w-28">Código</th>
+              <th class="p-3 min-w-52">Nombre Concesión</th>
+              <th class="p-3 w-28">Tipo</th>
+              <th class="p-3 w-32">Nº Expediente</th>
+              <th class="p-3 min-w-44">Titularidad (SUNARP)</th>
+              <th class="p-3 w-24 text-center">% Part.</th>
+              <th class="p-3 w-32">Fecha Formul.</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (propio of derechosPropios(); track propio.codigo) {
+              <tr
+                class="border-b border-slate-100 hover:bg-slate-50/30 transition-colors font-medium text-slate-700"
+              >
+                <td class="p-3 font-mono font-bold text-slate-900 tracking-wider">
+                  {{ propio.codigo }}
+                </td>
+                <td class="p-3 font-bold text-slate-800">{{ propio.nombre }}</td>
+                <td class="p-3">{{ propio.tipo }}</td>
+                <td class="p-3 font-mono">{{ propio.expediente }}</td>
+                <td class="p-3 text-slate-600 font-mono text-[10px]">{{ propio.sunarp }}</td>
+                <td class="p-3 text-center font-bold text-slate-900">
+                  {{ propio.participacion }}%
+                </td>
+                <td class="p-3 text-slate-500">{{ propio.fechaFormulacion }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="p-5 text-center text-slate-400 font-medium bg-white">
+                  ⏱️ Pendiente de cálculo espacial. Registre las coordenadas en la Sección 2.5 para
+                  visualizar las concesiones mineras propias.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- GRILLA B: DERECHOS MINEROS DE TERCEROS SUPERPUESTOS -->
+    <div class="marco-grilla bg-slate-50/50 border border-slate-200/60 rounded-xl p-5">
+      <h5
+        class="text-xs font-bold text-red-600 uppercase tracking-wider mb-3 flex items-center gap-1.5"
+      >
+        <span>⚠️</span> Derechos Mineros de Terceros Superpuestos en el Área del Proyecto
+      </h5>
+
+      <div
+        class="marco-tabla overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-inner"
+      >
+        <table class="w-full text-left text-[11px] border-collapse">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[9px]"
+            >
+              <th class="p-3 w-28">Código</th>
+              <th class="p-3 min-w-52">Nombre Concesión</th>
+              <th class="p-3 w-28">Tipo</th>
+              <th class="p-3 w-32">Nº Expediente</th>
+              <th class="p-3 min-w-44">Titularidad (SUNARP)</th>
+              <th class="p-3 w-24 text-center">% Part.</th>
+              <th class="p-3 w-32">Fecha Formul.</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tercero of derechosTerceros(); track tercero.codigo) {
+              <tr
+                class="fila-tercero border-b border-slate-100 bg-red-50/[0.02] hover:bg-red-50/20 transition-colors font-medium text-slate-700"
+              >
+                <td class="p-3 font-mono font-bold text-red-700 tracking-wider">
+                  {{ tercero.codigo }}
+                </td>
+                <td class="p-3 font-bold text-slate-800">{{ tercero.nombre }}</td>
+                <td class="p-3">{{ tercero.tipo }}</td>
+                <td class="p-3 font-mono">{{ tercero.expediente }}</td>
+                <td class="p-3 text-slate-600 font-mono text-[10px]">{{ tercero.sunarp }}</td>
+                <td class="p-3 text-center font-bold text-red-600">{{ tercero.participacion }}%</td>
+                <td class="p-3 text-slate-500">{{ tercero.fechaFormulacion }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="p-5 text-center text-slate-400 font-medium bg-white">
+                  ⏱️ Pendiente de cálculo espacial. Registre las coordenadas en la Sección 2.5 para
+                  detectar posibles superposiciones con terceros.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

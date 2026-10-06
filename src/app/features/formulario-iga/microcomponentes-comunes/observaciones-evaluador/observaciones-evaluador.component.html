@@ -1,0 +1,126 @@
+@if (micro(); as ficha) {
+  <section class="bloque-observaciones animate-fade-in" [attr.aria-labelledby]="'obs-titulo-' + numero()">
+    <div class="flex flex-col gap-3 justify-between lg:flex-row lg:items-start">
+      <div>
+        <h5
+          class="text-xs font-black tracking-wider text-slate-800 uppercase"
+          [id]="'obs-titulo-' + numero()"
+        >
+          🛡️ Guardián de Congruencia Normativa · DGAAM
+        </h5>
+        <p class="mt-1 text-[11px] leading-relaxed text-slate-600">
+          El Evaluador Institucional dejó {{ totalObservaciones() }} observación(es) sobre la sección
+          {{ numero() }}. Debe subsanarlas antes de remitirla al MINEM.
+        </p>
+      </div>
+      <div class="shrink-0">
+        <span class="text-[10px] font-bold tracking-wide text-slate-500 uppercase">
+          {{ totalSubsanadas() }} de {{ totalObservaciones() }} subsanadas
+        </span>
+      </div>
+    </div>
+
+    @if (aviso(); as mensaje) {
+      <p class="aviso-evaluacion" role="status">{{ mensaje }}</p>
+    }
+
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full border-collapse text-left">
+        <caption class="sr-only">
+          Observaciones del Evaluador Institucional sobre la sección {{ numero() }}
+        </caption>
+        <thead>
+          <tr class="border-b border-slate-200 text-[10px] tracking-wide uppercase">
+            <th scope="col" class="w-24 py-2 pr-3 font-bold text-slate-500">N.º</th>
+            <th scope="col" class="py-2 pr-3 font-bold text-slate-500">Glosa del Evaluador</th>
+            <th scope="col" class="w-28 py-2 pr-3 font-bold text-slate-500">Estado</th>
+            <th scope="col" class="w-40 py-2 font-bold text-slate-500">Acción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          @for (obs of observaciones(); track obs.id) {
+            <tr class="align-top">
+              <td class="py-3 pr-3 text-xs font-bold text-slate-500">
+                {{ obs.numeroCorrelativo }}
+              </td>
+              <td class="py-3 pr-3 text-xs leading-relaxed text-slate-700">
+                {{ obs.glosaEvaluador }}
+              </td>
+              <td class="py-3 pr-3">
+                <span
+                  class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase"
+                  [class.border-red-200]="obs.estado === 'PENDIENTE'"
+                  [class.bg-red-50]="obs.estado === 'PENDIENTE'"
+                  [class.text-red-700]="obs.estado === 'PENDIENTE'"
+                  [class.border-emerald-200]="obs.estado === 'SUBSANADO'"
+                  [class.bg-emerald-50]="obs.estado === 'SUBSANADO'"
+                  [class.text-emerald-700]="obs.estado === 'SUBSANADO'"
+                >
+                  {{ obs.estado }}
+                </span>
+                @if (obs.estado === 'SUBSANADO') {
+                  <span class="mt-0.5 block text-[10px] font-black text-emerald-600">
+                    Descargo registrado
+                  </span>
+                } @else {
+                  <span class="mt-0.5 block text-[10px] font-black text-red-500">
+                    Requiere sustento
+                  </span>
+                }
+              </td>
+              <td class="py-3">
+                <button
+                  type="button"
+                  class="cursor-pointer text-[10px] font-bold tracking-wide text-blue-700 uppercase underline hover:text-blue-900 disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                  [disabled]="obs.estado === 'SUBSANADO'"
+                  [attr.aria-expanded]="obs.editandoDescargo"
+                  [attr.aria-controls]="'caja-subsanacion-' + numero() + '-' + obs.id"
+                  (click)="abrirCaja(obs.id)"
+                >
+                  {{ obs.estado === 'SUBSANADO' ? 'Subsanado' : 'Responder' }}
+                </button>
+              </td>
+            </tr>
+            @if (obs.editandoDescargo) {
+              <tr class="animate-fila-subsanacion">
+                <td colspan="4" class="pt-0 pb-4">
+                  <div class="flex flex-col gap-2">
+                    <label
+                      class="text-[10px] font-bold tracking-wide text-slate-500 uppercase"
+                      [attr.for]="'caja-subsanacion-' + numero() + '-' + obs.id"
+                    >
+                      Descargo / sustento de {{ obs.numeroCorrelativo }}
+                    </label>
+                    <textarea
+                      #txtSustento
+                      rows="2"
+                      class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                      [id]="'caja-subsanacion-' + numero() + '-' + obs.id"
+                      placeholder="Redacte aquí la respuesta. Debe citar la evidencia que sustenta la subsanación."
+                    ></textarea>
+                    <div class="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        class="cursor-pointer text-[10px] font-bold text-slate-500 uppercase hover:text-slate-800"
+                        (click)="cerrarCaja()"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        class="cursor-pointer rounded-lg bg-amber-600 px-3 py-1 text-[10px] font-bold tracking-wide text-white uppercase hover:bg-amber-700"
+                        (click)="guardar(obs.id, txtSustento.value)"
+                      >
+                        💾 Guardar Subsanación
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}

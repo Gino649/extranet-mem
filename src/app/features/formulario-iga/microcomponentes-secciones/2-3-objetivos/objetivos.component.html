@@ -1,0 +1,97 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Objetivos y Justificación' }}</h1>
+    <p class="bajada">
+      Describa el propósito técnico de la campaña de exploración minera y sustente la necesidad de
+      su ejecución.
+    </p>
+  </div>
+
+  <!-- CUERPO DEL FORMULARIO (CAMPOS DE INGRESO) -->
+  <div class="space-y-6 mt-6">
+    <!-- Campo: Objetivos del Proyecto -->
+    <div>
+      <div class="flex justify-between items-end mb-1.5 gap-4">
+        <label
+          for="objetivos"
+          class="block text-xs font-bold text-slate-700 uppercase tracking-wide"
+        >
+          Objetivos del Proyecto <span class="text-red-500">*</span>
+        </label>
+        <span
+          class="contador"
+          [class.contador--aviso]="cercaDelTope(objetivos())"
+          [class.contador--limite]="enElTope(objetivos())"
+        >
+          {{ objetivos().length }}/{{ limite }} caract.
+          @if (cercaDelTope(objetivos())) {
+            <span class="contador-nota">· quedan {{ restantes(objetivos()) }}</span>
+          }
+        </span>
+      </div>
+      <textarea
+        id="objetivos"
+        [value]="objetivos()"
+        (input)="alEscribirObjetivos($event)"
+        [attr.maxlength]="limite"
+        rows="4"
+        placeholder="Ej. Realizar perforaciones diamantinas para cubicar y definir la continuidad de las estructuras mineralizadas de alta ley de cobre en la zona..."
+        class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium placeholder-slate-400 shadow-inner focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 focus:outline-none text-xs transition-all duration-300 resize-none"
+      ></textarea>
+      <p class="pista">Extensión mínima de {{ minimo }} caracteres.</p>
+    </div>
+
+    <!-- Campo: Justificación del Proyecto -->
+    <div>
+      <div class="flex justify-between items-end mb-1.5 gap-4">
+        <label
+          for="justificacion"
+          class="block text-xs font-bold text-slate-700 uppercase tracking-wide"
+        >
+          Justificación Técnica <span class="text-red-500">*</span>
+        </label>
+        <span
+          class="contador"
+          [class.contador--aviso]="cercaDelTope(justificacion())"
+          [class.contador--limite]="enElTope(justificacion())"
+        >
+          {{ justificacion().length }}/{{ limite }} caract.
+          @if (cercaDelTope(justificacion())) {
+            <span class="contador-nota">· quedan {{ restantes(justificacion()) }}</span>
+          }
+        </span>
+      </div>
+      <textarea
+        id="justificacion"
+        [value]="justificacion()"
+        (input)="alEscribirJustificacion($event)"
+        [attr.maxlength]="limite"
+        rows="4"
+        placeholder="Ej. El proyecto se justifica debido a que los estudios geológicos superficiales y muestreos geoquímicos previos indican un alto potencial de mineralización anómala..."
+        class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium placeholder-slate-400 shadow-inner focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 focus:outline-none text-xs transition-all duration-300 resize-none"
+      ></textarea>
+      <p class="pista">Extensión mínima de {{ minimo }} caracteres.</p>
+    </div>
+  </div>
+
+  <!-- Acuse de recibo del guardado -->
+  @if (guardado()) {
+    <p class="aviso-guardado" role="status">
+      Sección 2.3 validada. Objetivos y justificación quedan suscritos en el expediente.
+    </p>
+  }
+
+  <!-- Botonera de Validación de la Sección -->
+  <div class="pt-4 mt-6 flex justify-end border-t border-slate-100">
+    <button
+      type="button"
+      (click)="guardarYValidarSeccion()"
+      [disabled]="!formularioValido()"
+      class="boton-oro"
+    >
+      Guardar y Validar Sección {{ numero() }}
+    </button>
+  </div>
+</section>
