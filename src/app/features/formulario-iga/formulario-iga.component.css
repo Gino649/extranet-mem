@@ -204,3 +204,51 @@
     @apply flex-col items-start text-left;
   }
 }
+
+/* --------------------------------------------------------------------
+   CIERRE DEL EXPEDIENTE · Cortina de transmisión y acuse de recibo
+   ------------------------------------------------------------------ */
+
+/*
+ * La cortina y el acuse existen cuando el titular dispara el envío, no desde
+ * el arranque, así que su entrada suave es un fundido sencillo antes que un
+ * movimiento que reorganice la pantalla.
+ */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: aparecer 0.18s ease-out;
+}
+
+/* El acuse es una capa nueva sobre la pantalla: además del fundido entra con
+   un leve aumento para que no parezca un bloque recolocándose en el flujo. */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-zoom-in {
+  animation: entrar 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-zoom-in {
+    animation: none;
+  }
+}

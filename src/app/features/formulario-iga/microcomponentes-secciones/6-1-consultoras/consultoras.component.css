@@ -1,0 +1,67 @@
+@reference '../../../../../styles.css';
+
+.tarjeta {
+  @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm;
+}
+
+/* ============ CABECERA ESTANDAR ============ */
+
+.cabecera {
+  @apply border-b border-slate-100 pb-3;
+}
+
+.etiqueta {
+  @apply mb-1.5 block text-[10px] font-bold tracking-[0.18em] text-slate-500 uppercase;
+}
+
+.titulo {
+  @apply text-lg font-bold text-slate-900;
+}
+
+.bajada {
+  @apply mt-1 max-w-2xl text-sm leading-relaxed text-slate-500;
+}
+
+/* ============ ENTRADA DE POPUPS ============ */
+
+/* El overlay y el popup aparecen cuando el titular abre el formulario, no
+   cuando la vista carga: la entrada suave marca ese cambio de nivel sin
+   mover el layout. */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: aparecer 0.18s ease-out;
+}
+
+/* El popup entra con un leve aumento además del fundido: es una capa nueva
+   sobre la pantalla, no un bloque que se recoloca dentro del flujo. */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-zoom-in {
+  animation: entrar 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-zoom-in {
+    animation: none;
+  }
+}

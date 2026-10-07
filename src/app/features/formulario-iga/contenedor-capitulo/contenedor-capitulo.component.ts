@@ -17,6 +17,10 @@ import { InsumosEquiposComponent } from '../microcomponentes-secciones/2-9-insum
 import { PersonalComponent } from '../microcomponentes-secciones/2-10-personal/personal.component';
 import { MedioFisicoComponent } from '../microcomponentes-secciones/3-1-medio-fisico/medio-fisico.component';
 import { ArqueologiaComponent } from '../microcomponentes-secciones/3-3-arqueologia/arqueologia.component';
+import { ParticipacionCiudadanaComponent } from '../microcomponentes-secciones/4-1-participacion-ciudadana/participacion-ciudadana.component';
+import { ImpactosCierreComponent } from '../microcomponentes-secciones/5-1-impactos-cierre/impactos-cierre.component';
+import { AreasInfluenciaComponent } from '../microcomponentes-secciones/5-2-areas-influencia/areas-influencia.component';
+import { ConsultorasComponent } from '../microcomponentes-secciones/6-1-consultoras/consultoras.component';
 import { ObservacionesEvaluadorComponent } from '../microcomponentes-comunes/observaciones-evaluador/observaciones-evaluador.component';
 
 /**
@@ -99,9 +103,23 @@ export class ContenedorCapituloComponent {
     { id: '3.1', capituloId: '3', componenteRef: MedioFisicoComponent, visible: true },
     { id: '3.2', capituloId: '3', componenteRef: AdjuntarDocumentosComponent, visible: true },
     { id: '3.3', capituloId: '3', componenteRef: ArqueologiaComponent, visible: true },
-    { id: '5.2.1', capituloId: '5', componenteRef: DelimitacionMapaComponent, visible: true },
-    { id: '5.2.2', capituloId: '5', componenteRef: DelimitacionMapaComponent, visible: true },
+    { id: '3.4', capituloId: '3', componenteRef: AdjuntarDocumentosComponent, visible: true },
+    { id: '4.1', capituloId: '4', componenteRef: ParticipacionCiudadanaComponent, visible: true },
+    { id: '4.2', capituloId: '4', componenteRef: AdjuntarDocumentosComponent, visible: true },
+    { id: '5.1', capituloId: '5', componenteRef: ImpactosCierreComponent, visible: true },
+    {
+      id: '5.2',
+      capituloId: '5',
+      componenteRef: AreasInfluenciaComponent,
+      visible: true,
+    },
+    // Las sub-capas 5.2.1 y 5.2.2 quedan absorbidas por el inventario compuesto
+    // de la 5.2, que declara ambos en un solo microcomponente. Se retiran del
+    // flujo sin borrar su ficha: el `visible` existe para esto.
+    { id: '5.2.1', capituloId: '5', componenteRef: DelimitacionMapaComponent, visible: false },
+    { id: '5.2.2', capituloId: '5', componenteRef: DelimitacionMapaComponent, visible: false },
     { id: '5.3', capituloId: '5', componenteRef: AdjuntarDocumentosComponent, visible: true },
+    { id: '6.1', capituloId: '6', componenteRef: ConsultorasComponent, visible: true },
     { id: '6.2', capituloId: '6', componenteRef: AdjuntarDocumentosComponent, visible: true },
     { id: '7.1', capituloId: '7', componenteRef: AdjuntarDocumentosComponent, visible: true },
   ]);

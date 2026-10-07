@@ -517,6 +517,67 @@ export interface FuenteAbastecimientoAgua {
 }
 
 /**
+ * Compromiso ambiental de la matriz 5.1.
+ *
+ * Cada fila correlaciona una etapa y sus actividades con el componente afectado,
+ * la estrategia de manejo, el plazo y su presupuesto. Los identificadores se
+ * conservan entre guardados: el `@for` de la grilla empareja cada fila con su
+ * nodo por `id`, y uno nuevo en cada validación sacaría el DOM de su sitio.
+ */
+export interface CompromisoAmbiental {
+  readonly id: string;
+  readonly etapa: string;
+  readonly actividades: string;
+  readonly componenteFactor: string;
+  readonly aspectos: string;
+  readonly impactos: string;
+  readonly estrategiaManejo: string;
+  readonly plazoFrecuencia: string;
+  readonly presupuesto: number;
+}
+
+/** Categoría del inventario de áreas de influencia de la sección 5.2. */
+export type TipoInfluencia = 'AMBIENTAL' | 'SOCIAL';
+
+/** Alcance del área dentro de su categoría: lindero directo o indirecto. */
+export type TipoAreaInfluencia = 'DIRECTA' | 'INDIRECTA';
+
+/**
+ * Vértice de un área de influencia, en UTM WGS84 de la zona declarada.
+ *
+ * Los ejes admiten `null` mientras la fila está sin resolver: la grilla de
+ * captura arranca con filas en blanco y `null` es la marca de «aún sin
+ * escribir», distinta del `0` que sí significaría una coordenada real.
+ */
+export interface VerticeInfluencia {
+  readonly id: string;
+  readonly este: number | null;
+  readonly norte: number | null;
+}
+
+/**
+ * Área de influencia declarada en la sección 5.2.
+ *
+ * Viaja con su `geometry` en OGC WKT (UTM, con el anillo cerrado) porque es la
+ * forma textual en que el expediente expone el polígono al backend: los
+ * vértices se conservan además como números para la grilla de captura y para
+ * recálculos, y el WKT evita que el receptor tenga que reconstruir el cierre.
+ *
+ * Los identificadores se conservan entre guardados para que el `@for` de la
+ * grilla no descoloque el DOM al rehidratar.
+ */
+export interface AreaInfluencia {
+  readonly id: string;
+  readonly categoria: TipoInfluencia;
+  readonly tipo: TipoAreaInfluencia;
+  readonly nombre: string;
+  readonly zona: ZonaUTM;
+  readonly datum: 'WGS84';
+  readonly vertices: readonly VerticeInfluencia[];
+  readonly geometry: string;
+}
+
+/**
  * División política dentro de la que cae el área efectiva.
  *
  * Los tres niveles son los del CENSO REDATAM del INEI: el evaluador contrasta
@@ -814,9 +875,15 @@ const CAPITULOS_INICIALES: readonly CapituloExpediente[] = [
   capitulo('4', 'Plan de Participación Ciudadana', [
     seccion(
       '4.1',
-      'Mecanismos y Resultados',
+      'Mecanismos de Participacion Ciudadana',
       'Grilla dinámica de talleres ejecutados con fechas pasadas y medios de verificación.',
       'participacion-ciudadana',
+    ),
+    seccion(
+      '4.2',
+      'Adjuntar Documentos del Plan de Participacion',
+      'Actas, listas de asistencia, medios de verificación y material de las actividades de participación ciudadana.',
+      'adjuntos',
     ),
   ]),
 
@@ -1310,7 +1377,8 @@ export class DaexStore {
    * reconstruiría el árbol completo del expediente en cada tecla.
    */
   marcarObservada(seccionId: string, observado: boolean): void {
-    const efectivo = this.ajustesSecciones()[seccionId]?.observado ?? this.observadoEnSemilla(seccionId);
+    const efectivo =
+      this.ajustesSecciones()[seccionId]?.observado ?? this.observadoEnSemilla(seccionId);
     if (efectivo === observado) {
       return;
     }
@@ -1952,6 +2020,70 @@ export class DaexStore {
   /** Descarta la dotación de personal, por ejemplo al abandonar el expediente. */
   limpiarDotacionPersonal(): void {
     this.dotacionPersonal.set([]);
+  }
+
+  /* ------------------------------------------------------------------
+     5.1 · IMPACTOS AMBIENTALES, ESTRATEGIAS DE MANEJO Y CIERRE
+     ------------------------------------------------------------------
+     Matriz de compromisos ambientales. Se guarda como lista porque la grilla
+     la recorre en el orden en que el titular la declara; los identificadores
+     los conserva el store para que el @for no descoloque filas al rehidratar.
+     ------------------------------------------------------------------ */
+
+  private readonly compromisosAmbientales = signal<readonly CompromisoAmbiental[]>([]);
+
+  /** Compromisos ambientales ya validados por el titular. */
+  readonly compromisosAmbientalesRegistrada = this.compromisosAmbientales.asReadonly();
+
+  /**
+   * Publica la matriz de compromisos ambientales.
+   *
+   * Las filas llegan ya validadas por el componente: aquí no se revalida nada
+   * para no tener dos definiciones de qué es una declaración correcta. El clon
+   * es superficial porque la fila es plana.
+   */
+  registrarCompromisosAmbientales(compromisos: readonly CompromisoAmbiental[]): void {
+    this.compromisosAmbientales.set(compromisos.map((compromiso) => ({ ...compromiso })));
+  }
+
+  /** Descarta la matriz de impactos, por ejemplo al abandonar el expediente. */
+  limpiarCompromisosAmbientales(): void {
+    this.compromisosAmbientales.set([]);
+  }
+
+  /* ------------------------------------------------------------------
+     5.2 · ÁREA DE INFLUENCIA
+     ------------------------------------------------------------------
+     Inventario compuesto de influencia ambiental y social. Se guarda como una
+     sola lista, y la categoría de cada área la distingue al rehidratar: el
+     componente reparte las filas entre sus dos grillas según `categoria`.
+     ------------------------------------------------------------------ */
+
+  private readonly areasInfluencia = signal<readonly AreaInfluencia[]>([]);
+
+  /** Áreas de influencia ya validadas por el titular. */
+  readonly areasInfluenciaRegistrada = this.areasInfluencia.asReadonly();
+
+  /**
+   * Publica el inventario completo de áreas de influencia.
+   *
+   * Las filas llegan ya validadas por el componente; aquí no se revalida nada
+   * para no tener dos definiciones de qué es un área correcta. El clon baja dos
+   * niveles (área y sus vértices) porque los vértices son objetos y la
+   * aplicación los actualiza de forma inmutable.
+   */
+  registrarAreasInfluencia(areas: readonly AreaInfluencia[]): void {
+    this.areasInfluencia.set(
+      areas.map((area) => ({
+        ...area,
+        vertices: area.vertices.map((vertice) => ({ ...vertice })),
+      })),
+    );
+  }
+
+  /** Descarta el inventario de influencia, por ejemplo al abandonar el expediente. */
+  limpiarAreasInfluencia(): void {
+    this.areasInfluencia.set([]);
   }
 
   /** Todas las secciones del árbol, aplanadas, incluidas las sub-capas. */

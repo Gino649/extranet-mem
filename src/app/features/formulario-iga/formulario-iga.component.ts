@@ -23,6 +23,15 @@ const LEYENDA_SEMAFORO: readonly EntradaLeyenda[] = [
 ];
 
 /**
+ * Duración de la cortina de transmisión simulada hacia el MINEM.
+ *
+ * Es una constante del módulo y no una regla del store porque mide la
+ * presentación: el expediente ya está en verde y el envío ya se autorizó, la
+ * espera solo refuerza que la data salió entera antes de mostrar el acuse.
+ */
+const RETARDO_TRANSMISION_MS = 3500;
+
+/**
  * Contenedor de edición de la DAEX.
  *
  * Se adueña de la pantalla completa: cabecera inmutable con los metadatos del
@@ -152,22 +161,87 @@ export class FormularioIgaComponent {
     void this.router.navigate(['/workspace']);
   }
 
+  /* ------------------------------------------------------------------
+     CIERRE DEL EXPEDIENTE · CORTINA DE TRANSMISIÓN Y ACUSE DE RECIBO
+     ------------------------------------------------------------------ */
+
+  /** Cortina a pantalla completa mientras la transmisión está en curso. */
+  protected readonly procesandoEnvio = signal(false);
+
+  /** Visibilidad del acuse legal de recepción que devuelve el MINEM. */
+  protected readonly acuseModalAbierto = signal(false);
+
+  /**
+   * Ficha técnica del acuse que el MINEM estampa al radicar la solicitud.
+   *
+   * Objeto plano y no una signal porque se rellena de una sola vez al concluir
+   * la transmisión, justo antes de abrir el modal: la escritura de
+   * `acuseModalAbierto` dispara el cambio de detección que pinta los datos.
+   */
+  protected readonly acuseDatos = {
+    nroExpediente: '',
+    fecha: '',
+    hora: '',
+    estado: 'EN EVALUACIÓN TÉCNICA',
+  };
+
   /**
    * Remite el expediente al MINEM.
    *
    * El rótulo y el guardián cambian según la etapa del trámite, porque en cada
    * una se manda algo distinto: la DAEX nueva, la subsanación de lo observado o
-   * la documentación complementaria que el MINEM pidió. Un único botón fijo
-   * obligaría al titular a deducir por el color del semáforo qué está
-   * haciendo, y el guardián se delegaría en la lectura de la pantalla; aquí la
-   * condición se revalida contra el store para que la regla no dependa de la
-   * vista.
+   * la documentación complementaria que el MINEM pidió. La transmisión se
+   * simula con una cortina de espera, y la remisión no se registra hasta que
+   * esa cortina termina: si el titular abandona a mitad de envío, el store
+   * sigue diciendo que nada se ha mandado.
    */
-  protected enviarAlMinem(): void {
+  protected transmitirEstudioAlMinem(): void {
     if (!this.store.puedeRemitir()) {
       return;
     }
-    this.store.registrarRemision();
-    // Punto de integración con el envío real al sistema del MINEM.
+    // Guardián contra el doble disparo: la segunda llamada se ignora mientras
+    // la primera transmite.
+    if (this.procesandoEnvio()) {
+      return;
+    }
+
+    // 1. Levantar la cortina de espera y bloquear la pantalla.
+    this.procesandoEnvio.set(true);
+
+    // 2. Simular la transmisión masiva de planos, WKT y adjuntos.
+    setTimeout(() => {
+      this.store.registrarRemision();
+
+      // 3. Estampar el acuse con marcas de tiempo físicas del servidor.
+      const instante = new Date();
+      const correlativo = Math.floor(100000 + Math.random() * 900000);
+      this.acuseDatos.nroExpediente = `EXP-${correlativo}-${instante.getFullYear()}-DGAAM`;
+      this.acuseDatos.fecha = instante.toLocaleDateString('es-PE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      this.acuseDatos.hora = instante.toLocaleTimeString('es-PE', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      this.acuseDatos.estado = 'EN EVALUACIÓN TÉCNICA';
+
+      // 4. Retirar la cortina y desplegar el acuse de éxito.
+      this.procesandoEnvio.set(false);
+      this.acuseModalAbierto.set(true);
+    }, RETARDO_TRANSMISION_MS);
+  }
+
+  /**
+   * Cierre del ciclo: confirma el acuse y regresa a la bandeja de solicitudes.
+   *
+   * Es el mismo escape que `regresarAlWorkspace`: confirmar no descarta el
+   * borrador, solo cierra la ventana del acuse y vuelve al listado.
+   */
+  protected confirmarAcuseYSalir(): void {
+    this.acuseModalAbierto.set(false);
+    this.regresarAlWorkspace();
   }
 }

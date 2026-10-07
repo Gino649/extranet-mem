@@ -72,18 +72,26 @@ describe('ContenedorCapituloComponent', () => {
 
     it('conserva el orden del catálogo dentro del capítulo', () => {
       const { raiz } = montar('5');
-      // 5.2 se desglosa en dos sub-capas que comparten la pieza de delimitación.
-      expect(anclas(raiz)).toEqual(['seccion-5.2.1', 'seccion-5.2.2', 'seccion-5.3']);
+      // Las sub-capas 5.2.1 y 5.2.2 quedan absorbidas por el inventario
+      // compuesto de la 5.2, así que el capítulo apila tres piezas.
+      expect(anclas(raiz)).toEqual(['seccion-5.1', 'seccion-5.2', 'seccion-5.3']);
     });
 
-    it('reutiliza el uploader en los tres capítulos que lo requieren', () => {
-      expect(anclas(montar('3').raiz)).toEqual(['seccion-3.4']);
-      expect(anclas(montar('6').raiz)).toEqual(['seccion-6.2']);
+    it('apila la pieza de adjuntos en los capítulos que la requieren', () => {
+      expect(anclas(montar('3').raiz)).toEqual([
+        'seccion-3.1',
+        'seccion-3.2',
+        'seccion-3.3',
+        'seccion-3.4',
+      ]);
+      expect(anclas(montar('6').raiz)).toEqual(['seccion-6.1', 'seccion-6.2']);
       expect(anclas(montar('7').raiz)).toEqual(['seccion-7.1']);
     });
 
-    it('muestra el estado vacío en los capítulos sin piezas construidas', () => {
-      const { raiz } = montar('4');
+    it('muestra el estado vacío cuando el capítulo no tiene piezas', () => {
+      // Ningún capítulo oficial queda sin piezas, pero el contenedor debe
+      // seguir avisando si llega un capítulo aún sin construir.
+      const { raiz } = montar('9');
 
       expect(anclas(raiz)).toEqual([]);
       expect(raiz.textContent).toContain('aún no están habilitadas');
@@ -130,17 +138,46 @@ describe('ContenedorCapituloComponent', () => {
     });
 
     it('valida contra su propia fila del store y no contra la de otro capítulo', () => {
-      const { raiz, store } = montar('5');
-      const botones = Array.from(raiz.querySelectorAll<HTMLButtonElement>('.boton-oro'));
+      const store = TestBed.inject(DaexStore);
+      // La 5.2 exige al menos un área ambiental y una social para habilitar el
+      // guardado: se siembran desde el store, como si el titular ya las hubiera
+      // declarado, y la pieza las rehidrata.
+      store.registrarAreasInfluencia([
+        {
+          id: 'INF-1',
+          categoria: 'AMBIENTAL',
+          tipo: 'DIRECTA',
+          nombre: 'Área ambiental',
+          zona: '18S',
+          datum: 'WGS84',
+          vertices: [{ id: 'v-1', este: 300000, norte: 8550000 }],
+          geometry: 'POINT EMPTY',
+        },
+        {
+          id: 'INF-2',
+          categoria: 'SOCIAL',
+          tipo: 'DIRECTA',
+          nombre: 'Área social',
+          zona: '18S',
+          datum: 'WGS84',
+          vertices: [{ id: 'v-2', este: 301000, norte: 8551000 }],
+          geometry: 'POINT EMPTY',
+        },
+      ]);
+      const { raiz } = montar('5');
+      const botones = Array.from(raiz.querySelectorAll<HTMLButtonElement>('button'));
 
       const estadoPrevioDe25 = store.seccionPorNumero('2.5')?.estado;
       const confirmarMapa = botones.find((boton) =>
-        boton.textContent?.includes('Confirmar delimitación'),
+        boton.textContent?.includes('Guardar y Validar Sección 5.2'),
       );
       confirmarMapa?.click();
 
-      // La copia del capítulo 5 confirma 5.2.1 y no toca la 2.5 del capítulo 2.
+      // La copia del capítulo 5 valida la 5.2 (y sus sub-capas absorbidas) sin
+      // tocar la 2.5 del capítulo 2.
+      expect(store.seccionPorNumero('5.2')?.estado).toBe('Verde');
       expect(store.seccionPorNumero('5.2.1')?.estado).toBe('Verde');
+      expect(store.seccionPorNumero('5.2.2')?.estado).toBe('Verde');
       expect(store.seccionPorNumero('2.5')?.estado).toBe(estadoPrevioDe25);
     });
 

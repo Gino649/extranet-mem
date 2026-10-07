@@ -1,11 +1,13 @@
 @reference '../../../../../styles.css';
 
+/* ============ CABECERA ESTÁNDAR ============ */
 .tarjeta {
-  @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm;
+  @apply w-full bg-white border border-slate-200/80 rounded-2xl p-8;
+  box-shadow: 0 8px 30px rgb(15 23 42 / 0.04);
 }
 
 .cabecera {
-  @apply mb-5 border-b border-slate-100 pb-3;
+  @apply border-b border-slate-100 pb-4;
 }
 
 .etiqueta {
@@ -13,28 +15,22 @@
 }
 
 .titulo {
-  @apply text-lg font-bold text-slate-900;
+  @apply text-xl font-black text-slate-900 tracking-tight;
 }
 
 .bajada {
-  @apply mt-1 max-w-2xl text-sm leading-relaxed text-slate-500;
+  @apply text-xs text-slate-400 mt-1 font-medium;
 }
 
+/* ============ BLOQUES DE INVENTARIO ============ */
 .bloque {
-  @apply mt-5 flex flex-col gap-3;
+  @apply mt-6 flex flex-col gap-3;
 }
 
 .rotulo-bloque {
   @apply flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-700 uppercase;
 }
 
-/* --------------------------------------------------------------------
-   INVENTARIO DE AREAS
-
-   `tabular-nums` en las columnas numéricas evita que la zona y el datum
-   desplacen la retícula al compararlos entre filas, que es exactamente el
-   trabajo que hace quien valida el inventario contra el plano.
-   ------------------------------------------------------------------ */
 .marco-tabla {
   @apply overflow-x-auto rounded-xl border border-slate-200 bg-white;
 }
@@ -63,13 +59,7 @@
   @apply text-red-600 hover:bg-red-50 hover:text-red-700;
 }
 
-/* --------------------------------------------------------------------
-   VISOR · OpenLayers
-
-   `overflow-hidden` en el marco es lo que impide que el lienzo del mapa se
-   derrame sobre la grilla de vértices: el canvas mide su contenedor y sin
-   esto OpenLayers empuja la maquetación hacia abajo.
-   ------------------------------------------------------------------ */
+/* ============ VISOR · OpenLayers ============ */
 .marco-visor {
   @apply relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100;
 }
@@ -81,76 +71,46 @@
 /*
    Alto y ancho del lienzo, fijos y explícitos.
 
-   Es el único bloque de la vista partida cuya altura no puede depender del
-   formulario contiguo. OpenLayers dimensiona su canvas contra este elemento, de
-   modo que si el alto quedara en `auto` el lienzo se encogería al estirarse la
-   grilla de vértices y saltaría de tamaño en cada importación masiva.
-
-   El selector por id gana en especificidad a las clases de arriba sin necesidad
-   de `!important`, y `block` evita que un div vacío colapse a línea base.
+   OpenLayers dimensiona su canvas contra este elemento, de modo que si el alto
+   quedara en `auto` el lienzo se encogería al estirarse la grilla de vértices y
+   saltaría de tamaño en cada importación masiva. El selector por id gana en
+   especificidad a las clases de arriba sin necesidad de `!important`, y
+   `block` evita que un div vacío colapse a línea base.
 */
-#mapa-delimitacion-core {
+#mapa-influencia-core {
   @apply block h-[440px] w-full bg-slate-100;
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.05);
 }
 
 /* Apilado en móvil el visor baja: 440px no caben en un viewport corto. */
 @media (width < 40rem) {
-  #mapa-delimitacion-core {
+  #mapa-influencia-core {
     @apply h-72;
   }
 }
 
 /*
-   Leyenda flotante del área en la esquina inferior izquierda.
+   Leyenda flotante de la geometría en la esquina inferior izquierda.
 
-   Bottom-left porque las otras tres esquinas están tomadas: el zoom de OpenLayers
-   arriba a la izquierda, el selector de capas arriba a la derecha y la atribución
-   del mapa base abajo a la derecha. Con la leyenda arriba a la derecha se
-   solapaba con el selector.
+   Bottom-left porque las otras tres esquinas están tomadas: el zoom de
+   OpenLayers arriba a la izquierda y la atribución del mapa base abajo a la
+   derecha.
 */
 .leyenda-visor {
   @apply pointer-events-none absolute bottom-3 left-3 flex flex-col gap-0.5 rounded-lg border border-slate-200 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm;
 }
 
-/* --------------------------------------------------------------------
-   SELECTOR DE CAPAS
-
-   Va en la esquina superior derecha, y no como control de OpenLayers, porque
-   `ol` construye esos controles con `document.createElement`: un control de `ol`
-   nace fuera del encapsulado del componente y sus clases de componente no se le
-   aplicarían. Es el mismo motivo por el que `ol/ol.css` y los estilos de `.ol-*`
-   viven en `src/styles.css` en vez de en este archivo.
-   -------------------------------------------------------------------- */
-.selector-capas {
-  @apply absolute top-3 right-3 z-30 flex flex-col gap-1 rounded-xl border border-slate-200 bg-white/90 px-2 py-2 text-[11px] shadow-sm backdrop-blur-sm;
-}
-
-.selector-capas__rotulo {
-  @apply text-[10px] font-bold uppercase tracking-wide text-slate-400;
-}
-
-.selector-capas__opcion {
-  @apply flex cursor-pointer items-center gap-1.5 text-slate-700;
-}
-
-.selector-capas__opcion:hover {
-  @apply text-slate-900;
-}
-
-/* --------------------------------------------------------------------
-   VISTA PARTIDA · GRILLA DE VERTICES Y VISOR LADO A LADO
-
+/* ============ VISTA PARTIDA · GRILLA DE VÉRTICES Y VISOR ============ */
+/*
    Doce columnas con reparto 5/7, que es el 40/60 que se pidió sin decimales:
    en una grilla de doce no hay forma exacta de partir 40/60, y 5/7 deja el
    visor con un poco más de ancho, que es el panel que gana con ello.
 
-   `h-[500px]` congela la banda y `shrink-0` la protege. Sin ese segundo
-   rasgo el alto no valdría nada: `.modalo-cuerpo` es una columna flex y sus
-   hijos encogen por defecto, de modo que un `height` fijo se convertiría en un
-   máximo y el visor volvería a deformarse al abrir el panel en pantallas
-   bajas. `items-start` evita además que las dos columnas se estiren entre sí.
-   ------------------------------------------------------------------ */
+   `h-[500px]` congela la banda y `shrink-0` la protege: el cuerpo del modal es
+   una columna flex y sus hijos encogen por defecto, así que un `height` fijo
+   sin esto se convertiría en un máximo y el visor se deformaría en pantallas
+   bajas.
+*/
 .panel-dual {
   @apply grid h-[500px] w-full shrink-0 grid-cols-1 items-start gap-6 lg:grid-cols-12;
 }
@@ -171,25 +131,17 @@
 }
 
 /*
-   Altura maxima fija de la grilla de vertices.
+   Altura máxima fija de la grilla de vértices.
 
-   Es la regla que contiene la importacion masiva: con 260 vertices el alto
-   deja de depender de cuantas filas hay y el desplazamiento pasa a ser interno.
-   `overflow-x` lo hereda de `.marco-tabla`, asi que una fila ancha sigue
-   siendo alcanzable en lugar de recortarse en silencio.
+   Es la regla que contiene la importación masiva: con cientos de vértices el
+   alto deja de depender de cuántas filas hay y el desplazamiento pasa a ser
+   interno. La tabla de esta grilla usa `border-separate` (en el HTML) para que
+   la cabecera pegada conserve su borde al desplazarse.
 */
 .contenedor-tabla-vertices {
   @apply max-h-[380px] overflow-y-auto rounded-xl border border-slate-200 bg-white;
 }
 
-/*
-   Cabecera pegada al desplazarse la grilla.
-
-   El fondo opaco es obligatorio: si el `thead` se quedara transparente, las
-   filas del poligono se leerian a traves de el al pasar por debajo y perderian
-   la referencia de a que columna pertenecen. El `z-20` la pone por delante de
-   las celdas, que son `position: static` y no compiten.
-*/
 .contenedor-tabla-vertices thead tr {
   @apply sticky top-0 z-20 bg-slate-50;
 }
@@ -204,13 +156,7 @@
   box-shadow: 0 0 0 3px rgb(245 158 11 / 0.12);
 }
 
-/* --------------------------------------------------------------------
-   MODAL DE ALTA Y EDICION
-
-   El velo usa `fixed` y cubre la ventana entera, no la tarjeta, porque la
-   sección 2.5 vive dentro de un capítulo con scroll propio: un overlay
-   relativo quedaría recortado por el contenedor de la ficha.
-   ------------------------------------------------------------------ */
+/* ============ MODAL ============ */
 .velo {
   @apply fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm;
 }
@@ -223,11 +169,6 @@
   @apply relative shrink-0 border-b border-slate-100 px-5 py-4;
 }
 
-/*
-   El cierre va en la cabecera y no solo en el pie del paso de datos: desde el
-   paso de geometría, abandonar el trazado sin grabarlo forma parte del flujo,
-   y si la única salida fuera "Grabar" no habria forma de hacerlo.
-*/
 .modalo-cerrar {
   @apply absolute top-3 right-3 inline-flex h-7 w-7 items-center justify-center rounded-md text-lg leading-none text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-700;
 }
@@ -274,9 +215,7 @@
   @apply cursor-not-allowed bg-slate-100 text-slate-500;
 }
 
-/* --------------------------------------------------------------------
-   AVISOS Y ACCIONES
-   ------------------------------------------------------------------ */
+/* ============ AVISOS Y ACCIONES ============ */
 .aviso {
   @apply mr-auto text-xs font-semibold text-amber-700 empty:hidden;
 }
@@ -290,9 +229,7 @@
   box-shadow: 0 4px 20px rgb(245 158 11 / 0.3);
 }
 
-/* --------------------------------------------------------------------
-   ANIMACIONES DEL POPUP
-   ------------------------------------------------------------------ */
+/* ============ ANIMACIONES DEL POPUP ============ */
 @keyframes aparecer {
   from {
     opacity: 0;

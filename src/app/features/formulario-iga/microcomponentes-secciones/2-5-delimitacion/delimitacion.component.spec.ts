@@ -288,10 +288,12 @@ function crearVista(fixture: ComponentFixture<DelimitacionComponent>) {
     },
 
     /**
-     * Crea un area por el panel y deja el panel en su paso de geometria.
+     * Abre el modal de área nueva y rellena sus datos.
      *
-     * El alta ya no cierra el panel: tras guardar los datos aparece el trazado,
-     * y el|area queda seleccionada para poder dibujarla.
+     * El alta se dibuja y se graba en una sola pantalla, de modo que este paso
+     * deja el panel abierto y la geometría en su punto de partida: la grilla con
+     * tres filas en blanco y el visor montado. El área no entra al inventario
+     * hasta que se graba.
      */
     crearArea(
       categoria: 'ACTIVIDAD' | 'USO',
@@ -301,7 +303,11 @@ function crearVista(fixture: ComponentFixture<DelimitacionComponent>) {
       this.pulsa('Nueva área', categoria === 'ACTIVIDAD' ? 'actividad' : 'uso');
       this.escribeEn('#area-descripcion', descripcion);
       this.escribeEn('#area-actividad', actividad);
-      this.pulsa('Guardar y dibujar');
+    },
+
+    /** Pulsa el botón que graba el área consolidada y cierra el panel. */
+    grabarArea(): void {
+      this.pulsa('Grabar área validada');
     },
 
     /** Vuelca el triangulo de control en las filas que ya ofrece la grilla. */
@@ -394,7 +400,7 @@ describe('DelimitacionComponent', () => {
       expect(vista.vertices()).toEqual([]);
     });
 
-    it('monta el visor al entrar en el paso de geometria', async () => {
+    it('monta el visor en cuanto se abre el modal', async () => {
       const { vista, mapa } = await montar();
       vista.crearArea('ACTIVIDAD', 'Tajamar Norte');
 
@@ -409,25 +415,6 @@ describe('DelimitacionComponent', () => {
 
       expect(mapa.destruidas).toBe(1);
       expect(mapa.montadoEn).toBeNull();
-    });
-
-    it('libera el mapa al volver al paso de datos', async () => {
-      const { vista, mapa } = await montar();
-      vista.crearArea('ACTIVIDAD', 'Tajamar Norte');
-      vista.pulsa('Volver', 'panel');
-
-      expect(mapa.montadoEn).toBeNull();
-      expect(mapa.destruidas).toBe(1);
-    });
-
-    it('remonta el visor al volver a la geometria', async () => {
-      const { vista, mapa } = await montar();
-      vista.crearArea('ACTIVIDAD', 'Tajamar Norte');
-      vista.pulsa('Volver', 'panel');
-      vista.pulsa('Guardar y dibujar', 'panel');
-
-      expect(mapa.montadas).toBe(2);
-      expect(mapa.montadoEn).toBe(vista.nodo('.lienzo-mapa'));
     });
 
     it('no vuelve a montar el mapa por cada vertice tecleado', async () => {
@@ -452,6 +439,8 @@ describe('DelimitacionComponent', () => {
     it('registra un area nueva en la categoria elegida', async () => {
       const { vista } = await montar();
       vista.crearArea('ACTIVIDAD', 'Tajamar Norte');
+      vista.escribirPoligono();
+      vista.grabarArea();
 
       expect(vista.texto('actividad')).toContain('Tajamar Norte');
       expect(vista.texto('uso')).toContain('No hay áreas registradas');
@@ -460,8 +449,11 @@ describe('DelimitacionComponent', () => {
     it('separa las categorias sin mezclarlas', async () => {
       const { vista } = await montar();
       vista.crearArea('ACTIVIDAD', 'Cantera Sur');
-      vista.cerrarPanel();
+      vista.escribirPoligono();
+      vista.grabarArea();
       vista.crearArea('USO', 'Planta de Beneficio', 'Molienda');
+      vista.escribirPoligono();
+      vista.grabarArea();
 
       expect(vista.texto('actividad')).toContain('Cantera Sur');
       expect(vista.texto('uso')).toContain('Planta de Beneficio');
@@ -471,7 +463,8 @@ describe('DelimitacionComponent', () => {
     it('elimina el area indicada', async () => {
       const { vista } = await montar();
       vista.crearArea('ACTIVIDAD', 'Area temporal');
-      vista.cerrarPanel();
+      vista.escribirPoligono();
+      vista.grabarArea();
       vista.pulsa('Eliminar', 'actividad');
 
       expect(vista.texto('actividad')).toContain('No hay áreas registradas en actividad minera.');
@@ -481,26 +474,30 @@ describe('DelimitacionComponent', () => {
       const { vista } = await montar();
       vista.crearArea('ACTIVIDAD', 'Tajamar');
       vista.escribirPoligono();
-      vista.cerrarPanel();
+      vista.grabarArea();
 
       vista.pulsa('Editar', 'actividad');
-      vista.escribeEn('#area-descripcion', 'Tajamar Sur');
-      vista.pulsa('Guardar y dibujar');
-
-      expect(vista.texto('actividad')).toContain('Tajamar Sur');
+      // La geometría viaja con el área: al reabrirla el triángulo está cargado.
       expect(vista.filasVertices()).toBe(3);
       expect(vista.bloqueado('Grabar área validada')).toBe(false);
+
+      vista.escribeEn('#area-descripcion', 'Tajamar Sur');
+      vista.grabarArea();
+
+      expect(vista.texto('actividad')).toContain('Tajamar Sur');
+      expect(vista.filasInventario('ACTIVIDAD')).toBe(1);
     });
 
     it('no crea un segundo area si se vuelve a guardar la misma', async () => {
       const { vista } = await montar();
       vista.crearArea('ACTIVIDAD', 'Tajamar');
-      vista.cerrarPanel();
+      vista.escribirPoligono();
+      vista.grabarArea();
       expect(vista.filasInventario('ACTIVIDAD')).toBe(1);
 
       vista.pulsa('Editar', 'actividad');
       vista.escribeEn('#area-actividad', 'Explotacion a cielo abierto');
-      vista.pulsa('Guardar y dibujar');
+      vista.grabarArea();
 
       expect(vista.filasInventario('ACTIVIDAD')).toBe(1);
       expect(vista.texto('actividad')).toContain('Explotacion a cielo abierto');
@@ -516,23 +513,13 @@ describe('DelimitacionComponent', () => {
       expect(vista.panelAbierto()).toBe(false);
     });
 
-    it('se abre en el paso de datos para un alta', async () => {
+    it('abre el modal con los datos en blanco y el visor a la vista para un alta', async () => {
       const { vista } = await montar();
       vista.pulsa('Nueva área', 'actividad');
 
       expect(vista.panelAbierto()).toBe(true);
       expect(vista.control<HTMLInputElement>('#area-descripcion').value).toBe('');
-      expect(vista.nodo('.lienzo-mapa')).toBeNull();
-    });
-
-    it('anuncia los dos pasos y marca el vigente', async () => {
-      const { vista } = await montar();
-      vista.pulsa('Nueva área', 'actividad');
-
-      expect(vista.textoDe('.pasos')).toContain('Datos del área');
-      expect(vista.textoDe('.pasos')).toContain('Geometría');
-      expect(vista.raiz.querySelectorAll('.paso-activo').length).toBe(1);
-      expect(vista.nodo('.paso-activo')?.textContent).toContain('Datos del área');
+      expect(vista.nodo('.lienzo-mapa')).not.toBeNull();
     });
 
     it('anuncia la categoria a la que pertenece el alta', async () => {
@@ -547,7 +534,8 @@ describe('DelimitacionComponent', () => {
       expect(vista.textoDe('.modalo-cabecera .titulo')).toBe('Nueva área superficial');
 
       vista.crearArea('ACTIVIDAD', 'Tajamar');
-      vista.cerrarPanel();
+      vista.escribirPoligono();
+      vista.grabarArea();
       vista.pulsa('Editar', 'actividad');
       expect(vista.textoDe('.modalo-cabecera .titulo')).toBe('Editar área superficial');
     });
@@ -555,23 +543,28 @@ describe('DelimitacionComponent', () => {
     it('carga los valores vigentes al editar', async () => {
       const { vista } = await montar();
       vista.crearArea('ACTIVIDAD', 'Tajamar', 'Explotacion minera');
-      vista.cerrarPanel();
+      vista.escribirPoligono();
+      vista.grabarArea();
       vista.pulsa('Editar', 'actividad');
 
       expect(vista.control<HTMLInputElement>('#area-descripcion').value).toBe('Tajamar');
       expect(vista.control<HTMLInputElement>('#area-actividad').value).toBe('Explotacion minera');
     });
 
-    it('bloquea el guardado mientras falte un campo obligatorio', async () => {
+    it('bloquea el guardado mientras falten datos o geometria', async () => {
       const { vista } = await montar();
       vista.pulsa('Nueva área', 'actividad');
-      expect(vista.bloqueado('Guardar y dibujar')).toBe(true);
+      expect(vista.bloqueado('Grabar área validada')).toBe(true);
 
       vista.escribeEn('#area-descripcion', 'Tajamar');
-      expect(vista.bloqueado('Guardar y dibujar')).toBe(true);
+      expect(vista.bloqueado('Grabar área validada')).toBe(true);
 
       vista.escribeEn('#area-actividad', 'Explotacion');
-      expect(vista.bloqueado('Guardar y dibujar')).toBe(false);
+      // Con los campos llenos aún falta el polígono: no se graba hasta tres vértices.
+      expect(vista.bloqueado('Grabar área validada')).toBe(true);
+
+      vista.escribirPoligono();
+      expect(vista.bloqueado('Grabar área validada')).toBe(false);
     });
 
     it('presenta el datum fijo y bloqueado', async () => {
@@ -626,19 +619,6 @@ describe('DelimitacionComponent', () => {
       expect(vista.panelAbierto()).toBe(false);
       expect(store.areaEfectivaRegistrada().length).toBe(0);
     });
-
-    it('conserva la geometria al ir y volver entre los dos pasos', async () => {
-      const { vista } = await montar();
-      vista.crearArea('ACTIVIDAD', 'Tajamar');
-      vista.escribirPoligono();
-
-      vista.pulsa('Volver', 'panel');
-      expect(vista.nodo('.lienzo-mapa')).toBeNull();
-      vista.pulsa('Guardar y dibujar', 'panel');
-
-      expect(vista.filasVertices()).toBe(3);
-      expect(vista.bloqueado('Grabar área validada')).toBe(false);
-    });
   });
 
   /* ----------------------------------------------------------------
@@ -676,7 +656,8 @@ describe('DelimitacionComponent', () => {
       vista.pulsa('Eliminar', 'panel');
 
       expect(vista.filasVertices()).toBe(2);
-      expect(vista.texto('actividad')).toContain('Tajamar');
+      // El borrador aún no se ha grabado: el inventario sigue tal cual.
+      expect(vista.texto('actividad')).toContain('No hay áreas registradas en actividad minera.');
     });
 
     it('permite vaciar la grilla del todo', async () => {
@@ -788,7 +769,6 @@ describe('DelimitacionComponent', () => {
       vista.escribeEn('#area-zona', '19S');
       vista.escribeEn('#area-descripcion', 'Tajamar');
       vista.escribeEn('#area-actividad', 'Explotacion');
-      vista.pulsa('Guardar y dibujar');
       vista.escribirPoligono();
 
       expect(mapa.ultimo?.zona).toBe('19S');

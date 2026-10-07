@@ -38,8 +38,15 @@ const ZONAS: readonly ZonaUTM[] = ['17S', '18S', '19S'];
  */
 const VERTICES_INICIALES = 3;
 
-/** Paso del modal: primero los datos del área, después su geometría. */
-type PasoModal = 'datos' | 'geometria';
+/**
+ * Filas que muestra la grilla de vértices de una sola vez.
+ *
+ * Es el tope que evita que una importación masiva (un shapefile puede traer
+ * varios cientos de puntos) deje el modal dibujando filas infinitas. Los vértices
+ * que no caben en la grilla siguen contando para la geometría: el polígono se
+ * dibuja con todos, la grilla solo muestra la cabecera de la lista.
+ */
+const MAX_VERTICES_EN_GRILLA = 50;
 
 /** Vértice en edición: las coordenadas admiten vacío hasta que se escriben. */
 interface Vertice {
@@ -233,13 +240,16 @@ const BORRADOR_NUEVO: BorradorArea = {
  * Microcomponente de la sección 2.5 · Delimitación del Área Efectiva.
  *
  * La sección lleva un inventario de dos categorías —áreas en actividad minera y
- * áreas en uso minero— y, en un panel aparte, el trazado del polígono del área
- * que se está editando. El inventario persiste en memoria mientras la ficha esté
- * viva; el polígono que sí alimenta el expediente se publica al grabarlo.
+ * áreas en uso minero— y, en un único modal de una sola pantalla, los datos del
+ * área y el trazado de su polígono. El inventario persiste en memoria mientras
+ * la ficha esté viva; el polígono que sí alimenta el expediente se publica al
+ * grabar, que es también el momento en que el área entra o se actualiza en el
+ * inventario.
  *
- * El visor y la grilla de vértices se montan dentro del panel, no junto al
- * inventario: un polígono a medio cerrar no es un dato del expediente sino un
- * borrador, y junto a las áreas ya grabadas parecería definitivo.
+ * El visor y la grilla de vértices viven dentro del modal y se montan con él,
+ * no junto al inventario: un polígono a medio cerrar no es un dato del
+ * expediente sino un borrador, y junto a las áreas ya grabadas parecería
+ * definitivo.
  */
 @Component({
   selector: 'app-delimitacion',
@@ -254,9 +264,9 @@ export class DelimitacionComponent {
   private readonly mapa = inject(MapaFacade);
 
   /**
-   * Contenedor del visor, que solo existe mientras el modal está en su paso de
-   * geometría. Un `viewChild` de señal y no `@ViewChild` porque el montaje del
-   * mapa tiene que seguir al elemento, y ese elemento aparece y desaparece.
+   * Contenedor del visor, que solo existe mientras el modal está abierto. Un
+   * `viewChild` de señal y no `@ViewChild` porque el montaje del mapa tiene que
+   * seguir al elemento, y ese elemento aparece y desaparece.
    */
   private readonly lienzo = viewChild<ElementRef<HTMLDivElement>>('mapaCore');
 
@@ -276,14 +286,10 @@ export class DelimitacionComponent {
 
   protected readonly areasActividad = signal<readonly AreaSuperficial[]>([]);
   protected readonly areasUso = signal<readonly AreaSuperficial[]>([]);
-  protected readonly areaSeleccionada = signal<AreaSuperficial | null>(null);
 
   protected readonly modalAbierto = signal(false);
   protected readonly modalCategoria = signal<TipoCategoriaArea>('ACTIVIDAD');
   protected readonly borrador = signal<BorradorArea>(BORRADOR_NUEVO);
-
-  /** Paso activo del modal: datos o geometría. */
-  protected readonly paso = signal<PasoModal>('datos');
 
   /** Resultado de la última importación, sea buena o mala. */
   protected readonly aviso = signal<string | null>(null);
@@ -298,9 +304,24 @@ export class DelimitacionComponent {
   /** Metadatos de la sección, resueltos contra el árbol del store. */
   protected readonly seccion = computed(() => this.store.seccionPorNumero(this.numero()));
 
-  /** Vértices del área activa, que es la que se dibuja en el mapa. */
-  protected readonly coordenadas = computed<readonly Vertice[]>(
-    () => this.areaSeleccionada()?.coordenadas ?? [],
+  /**
+   * Vértices en edición dentro del modal.
+   *
+   * Son un borrador propio de la pantalla: los datos de una importación o de una
+   * corrección no entran al inventario hasta que se graba el área, que es cuando
+   * se consolidan en la fila correspondiente.
+   */
+  protected readonly coordenadas = signal<readonly Vertice[]>([]);
+
+  /**
+   * Filas que caben en la grilla.
+   *
+   * `slice` y no un filtro: los vértices que quedan fuera de la ventana siguen
+   * formando parte del polígono, solo dejan de mostrarse. La grilla muestra la
+   * cabecera de la lista, no la lista entera.
+   */
+  protected readonly coordenadasVisibles = computed(() =>
+    this.coordenadas().slice(0, MAX_VERTICES_EN_GRILLA),
   );
 
   /**
@@ -311,21 +332,17 @@ export class DelimitacionComponent {
    * encierra área y no sirve ni para calcular superficie ni para cruzar contra
    * el catastro.
    */
-  protected readonly coordenadasVisibles = computed(() =>
-    this.coordenadas().filter((vertice) => vertice.este !== null && vertice.norte !== null),
+  protected readonly coordenadasCompletas = computed<VerticeCompleto[]>(() =>
+    this.coordenadas().filter(
+      (vertice): vertice is VerticeCompleto => vertice.este !== null && vertice.norte !== null,
+    ),
   );
 
-  protected readonly coordenadasValidas = computed(() => {
-    const area = this.areaSeleccionada();
-    if (!area || area.descripcion.trim() === '' || area.actividad.trim() === '') {
-      return false;
-    }
-    return this.coordenadasVisibles().length >= 3;
-  });
+  protected readonly coordenadasValidas = computed(() => this.coordenadasCompletas().length >= 3);
 
   /** Estado geométrico para el aviso flotante sobre el visor. */
   protected readonly estadoGeometrico = computed(() => {
-    const total = this.coordenadasVisibles().length;
+    const total = this.coordenadasCompletas().length;
     if (total >= 3) {
       return 'Polígono en pantalla';
     }
@@ -355,13 +372,12 @@ export class DelimitacionComponent {
      * siempre. El efecto ata el montaje a la existencia del propio lienzo:
      * aparece al abrir, desaparece al cerrar, y en ese momento se libera.
      *
-     * Se sigue únicamente al lienzo, no al área. Editar un vértice reemplaza el
-     * objeto del área, y si el efecto la leyera se volvería a lanzar en cada
-     * pulsación; el repintado de cada vértice lo dispara `actualizarGraficoMapa`,
-     * que para eso existe.
+     * Se sigue únicamente al lienzo, no al borrador ni a los vértices. Tocar un
+     * vértice o escribir un campo no debe remontar el mapa: el repintado de cada
+     * pulsación lo dispara `actualizarGraficoMapa`, que para eso existe.
      *
      * `mapaMontado` evita destruir un mapa que nunca llegó a existir: con el
-     * panel cerrado de entrada el efecto se ejecuta igual, y sin este testigo
+     * modal cerrado de entrada el efecto se ejecuta igual, y sin este testigo
      * la primera pasada sería una liberación de la nada.
      */
     effect(() => {
@@ -376,7 +392,7 @@ export class DelimitacionComponent {
       if (!this.mapaMontado) {
         this.mapaMontado = this.mapa.montar(
           destino,
-          untracked(() => this.areaSeleccionada()?.zona ?? '18S'),
+          untracked(() => this.borrador().zona),
         );
       }
       untracked(() => this.actualizarGraficoMapa());
@@ -392,7 +408,7 @@ export class DelimitacionComponent {
      ------------------------------------------------------------------ */
 
   /**
-   * Abre el modal para una categoría nueva, en el paso de datos.
+   * Abre el modal para una categoría nueva.
    *
    * El datum no se limpia: no es un campo que el titular pueda cambiar, así que
    * arrastrarlo como si lo fuera solo daría la impresión de que sí.
@@ -400,32 +416,13 @@ export class DelimitacionComponent {
   protected abrirModalNuevo(categoria: TipoCategoriaArea): void {
     this.modalCategoria.set(categoria);
     this.borrador.set({ ...BORRADOR_NUEVO });
-    this.areaSeleccionada.set(null);
+    this.coordenadas.set(this.verticesEnBlanco(VERTICES_INICIALES));
     this.aviso.set(null);
-    this.paso.set('datos');
     this.modalAbierto.set(true);
   }
 
-  /** Abre el modal sobre un área existente para corregir sus datos. */
+  /** Abre el modal sobre un área existente, con sus datos y su geometría. */
   protected abrirModalEdicion(area: AreaSuperficial): void {
-    this.cargarBorrador(area);
-    this.paso.set('datos');
-    this.modalAbierto.set(true);
-  }
-
-  /**
-   * Abre el modal directo sobre la geometría de un área existente.
-   *
-   * Es la acción que sigue el mapa: el área ya está dada de alta, lo que falta es
-   * dibujarla, y no tiene sentido frenar en unos datos que ya están correctos.
-   */
-  protected seleccionarArea(area: AreaSuperficial): void {
-    this.cargarBorrador(area);
-    this.paso.set('geometria');
-    this.modalAbierto.set(true);
-  }
-
-  private cargarBorrador(area: AreaSuperficial): void {
     this.modalCategoria.set(area.categoria);
     this.borrador.set({
       id: area.id,
@@ -434,20 +431,17 @@ export class DelimitacionComponent {
       zona: area.zona,
       datum: area.datum,
     });
-    this.areaSeleccionada.set(area);
+    // Los vértices se clonan: editar la geometría del modal no debería alterar
+    // el inventario hasta que el titular pulse grabar.
+    this.coordenadas.set(area.coordenadas.map((vertice) => ({ ...vertice })));
     this.aviso.set(null);
+    this.modalAbierto.set(true);
   }
 
-  /** Cierra el modal y suelta el área en edición. */
+  /** Cierra el modal y descarta el borrador. */
   protected cerrarModalArea(): void {
     this.modalAbierto.set(false);
-    this.areaSeleccionada.set(null);
     this.aviso.set(null);
-  }
-
-  /** Vuelve al paso de datos sin perder la geometría ya dibujada. */
-  protected volverADatos(): void {
-    this.paso.set('datos');
   }
 
   protected alEscribirBorrador(campo: 'descripcion' | 'actividad', evento: Event): void {
@@ -458,35 +452,10 @@ export class DelimitacionComponent {
   protected alElegirZona(evento: Event): void {
     const zona = (evento.target as HTMLSelectElement).value as ZonaUTM;
     this.borrador.update((actual) => ({ ...actual, zona }));
-  }
-
-  /**
-   * Confirma los datos del modal: crea el área o actualiza la existente.
-   *
-   * No cierra. El alta deja el área seleccionada y salta al paso de geometría,
-   * porque el trámite no termina hasta que el titular ha dibujado el polígono.
-   */
-  protected procesarGuardadoModal(): void {
-    if (!this.modalDataValido()) {
-      return;
-    }
-    const borrador = this.borrador();
-
-    if (borrador.id) {
-      this.actualizarArea(borrador.id);
-    } else {
-      const nueva = this.construirArea(
-        borrador,
-        this.modalCategoria(),
-        this.verticesEnBlanco(VERTICES_INICIALES),
-      );
-      this.agregarArea(nueva);
-      this.areaSeleccionada.set(nueva);
-      // Tras el alta, el borrador pasa a referse al área creada: si el titular
-      // vuelve a los datos y guarda, debe editar esa área y no crear otra.
-      this.borrador.set({ ...borrador, id: nueva.id });
-    }
-    this.paso.set('geometria');
+    // La zona es parte del dibujo: cambiar a qué banda UTM pertenece el área
+    // debe reflejarse en el visor de inmediato, no esperar a la siguiente
+    // edición de un vértice.
+    this.actualizarGraficoMapa();
   }
 
   /* ------------------------------------------------------------------
@@ -496,51 +465,27 @@ export class DelimitacionComponent {
   protected eliminarArea(id: string, categoria: TipoCategoriaArea): void {
     const coleccion = this.coleccionDe(categoria);
     coleccion.update((areas) => areas.filter((area) => area.id !== id));
-    if (this.areaSeleccionada()?.id === id) {
-      this.areaSeleccionada.set(null);
-    }
   }
 
-  /** Añade una fila de vértice en blanco al área en edición. */
+  /** Añade una fila de vértice en blanco la geometría en edición. */
   protected agregarNuevaCoordenadaManual(): void {
-    const area = this.areaSeleccionada();
-    if (!area) {
-      return;
-    }
-    this.reemplazarArea({
-      ...area,
-      coordenadas: [...area.coordenadas, ...this.verticesEnBlanco(1)],
-    });
+    this.coordenadas.update((actual) => [...actual, ...this.verticesEnBlanco(1)]);
   }
 
   /** Quita la fila indicada y repinta el polígono. */
   protected eliminarCoordenadaFila(id: string): void {
-    const area = this.areaSeleccionada();
-    if (!area) {
-      return;
-    }
-    this.reemplazarArea({
-      ...area,
-      coordenadas: area.coordenadas.filter((vertice) => vertice.id !== id),
-    });
+    this.coordenadas.update((actual) => actual.filter((vertice) => vertice.id !== id));
     this.actualizarGraficoMapa();
   }
 
   protected alEscribirVertice(id: string, campo: 'este' | 'norte', evento: Event): void {
-    const area = this.areaSeleccionada();
-    if (!area) {
-      return;
-    }
     const bruto = (evento.target as HTMLInputElement).value.trim();
     const valor = bruto === '' ? null : Number(bruto);
     const seguro = valor !== null && Number.isFinite(valor) ? valor : null;
 
-    this.reemplazarArea({
-      ...area,
-      coordenadas: area.coordenadas.map((vertice) =>
-        vertice.id === id ? { ...vertice, [campo]: seguro } : vertice,
-      ),
-    });
+    this.coordenadas.update((actual) =>
+      actual.map((vertice) => (vertice.id === id ? { ...vertice, [campo]: seguro } : vertice)),
+    );
     this.actualizarGraficoMapa();
   }
 
@@ -551,14 +496,7 @@ export class DelimitacionComponent {
    * inmediato, y empezar de cero en blanco obliga a crear las filas a mano.
    */
   protected limpiarEstructuraMapa(): void {
-    const area = this.areaSeleccionada();
-    if (!area) {
-      return;
-    }
-    this.reemplazarArea({
-      ...area,
-      coordenadas: this.verticesEnBlanco(VERTICES_INICIALES),
-    });
+    this.coordenadas.set(this.verticesEnBlanco(VERTICES_INICIALES));
     this.actualizarGraficoMapa();
   }
 
@@ -580,15 +518,9 @@ export class DelimitacionComponent {
    * los vértices en cada tecla, y una importación puede traer varios cientos.
    */
   protected actualizarGraficoMapa(): void {
-    const area = this.areaSeleccionada();
-    if (!area) {
-      this.mapa.actualizarPoligono([], '18S');
-      return;
-    }
-    const vertices = this.coordenadasVisibles();
     this.mapa.actualizarPoligono(
-      vertices.map((vertice) => ({ este: vertice.este as number, norte: vertice.norte as number })),
-      area.zona,
+      this.coordenadasCompletas().map((vertice) => ({ este: vertice.este, norte: vertice.norte })),
+      this.borrador().zona,
       true,
     );
   }
@@ -703,8 +635,7 @@ export class DelimitacionComponent {
       return;
     }
 
-    const area = this.areaSeleccionada();
-    const avisoZona = await this.comprobarZonaDelShapefile(bruto, nombre, area?.zona);
+    const avisoZona = await this.comprobarZonaDelShapefile(bruto, nombre);
     this.incorporarPuntos(primero.map((punto) => ({ este: punto.x, norte: punto.y })));
     this.aviso.set(`Shapefile leído: ${primero.length} vértices del anillo exterior${avisoZona}.`);
     entrada.value = '';
@@ -721,17 +652,13 @@ export class DelimitacionComponent {
    *
    * Devuelve el texto a añadir al aviso de éxito, o cadena vacía si todo cuadra.
    */
-  private async comprobarZonaDelShapefile(
-    bruto: ArrayBuffer,
-    nombre: string,
-    zona: ZonaUTM | undefined,
-  ): Promise<string> {
+  private async comprobarZonaDelShapefile(bruto: ArrayBuffer, nombre: string): Promise<string> {
     // Solo el `.zip` puede traer el `.prj` al lado; un `.shp` suelto llega sin él.
     const epsg = nombre.endsWith('.zip') ? await leerEpsgDeZip(bruto) : null;
     if (epsg === null) {
       return '';
     }
-    const destino = EPSG_POR_ZONA[zona ?? '18S'] ?? EPSG_POR_ZONA['18S'];
+    const destino = EPSG_POR_ZONA[this.borrador().zona] ?? EPSG_POR_ZONA['18S'];
     if (`EPSG:${epsg}` === destino) {
       return '';
     }
@@ -741,21 +668,19 @@ export class DelimitacionComponent {
     );
   }
 
-  /** Reemplaza los vértices del área activa por los puntos importados. */
+  /** Reemplaza los vértices del modal por los puntos importados. */
   private incorporarPuntos(puntos: readonly { este: number; norte: number }[]): void {
-    const area = this.areaSeleccionada();
-    if (!area || puntos.length === 0) {
-      this.aviso.set('No hay área seleccionada o el archivo no trajo coordenadas.');
+    if (puntos.length === 0) {
+      this.aviso.set('El archivo no trajo coordenadas que importar.');
       return;
     }
-    this.reemplazarArea({
-      ...area,
-      coordenadas: puntos.map((punto) => ({
+    this.coordenadas.set(
+      puntos.map((punto) => ({
         id: this.nuevoId('v'),
         este: punto.este,
         norte: punto.norte,
       })),
-    });
+    );
     this.actualizarGraficoMapa();
   }
 
@@ -780,12 +705,16 @@ export class DelimitacionComponent {
   }
 
   /**
-   * Sella el expediente: publica el polígono y cierra el panel.
+   * Sella el expediente: consolida el área y publica su polígono.
    *
    * Es el único punto por el que el resto de la 2.5 puede leer geometría: la 2.2
    * cruza las coordenadas contra el catastro y la 2.4 hereda el ubigeo político,
    * que sigue derivándose de esta área en lugar de escrito a mano. Si este botón
    * no se pulsa, esas secciones quedan pendientes por una razón que no es suya.
+   *
+   * El alta crea la fila del inventario; la edición actualiza la existente por su
+   * `id`. Ambas guardan la geometría del modal en el mismo paso, de modo que no
+   * existe un momento en que el rótulo esté actualizado y el polígono no.
    *
    * `registrarAreaEfectiva` va antes que el semáforo porque es la escritura que
    * habilita a las secciones vecinas: poner en verde una sección cuyo polígono
@@ -793,35 +722,15 @@ export class DelimitacionComponent {
    *
    * El cierre es parte del sello: el área ya está en el expediente y dejarla
    * abierta invitaría a un segundo desenho que no se confundiría con el primero.
-   * Se cierra con `cerrarModalArea` y no limpiando señales a mano, porque esa
-   * es la que también suelta el área en edición y libera el mapa.
    */
   protected grabarAreaValidada(): void {
-    const area = this.areaSeleccionada();
-    if (!this.coordenadasValidas() || !area) {
+    if (!this.modalDataValido() || !this.coordenadasValidas()) {
       return;
     }
-    const vertices = this.coordenadasVisibles();
-    this.store.registrarAreaEfectiva(
-      vertices.map((vertice) => ({
-        este: vertice.este as number,
-        norte: vertice.norte as number,
-      })),
-    );
-    this.store.actualizarEstadoSeccion(this.numero(), 'VERDE');
-    this.cerrarModalArea();
-  }
-
-  /* ------------------------------------------------------------------
-     SOPORTE INTERNO
-     ------------------------------------------------------------------ */
-
-  private construirArea(
-    borrador: BorradorArea,
-    categoria: TipoCategoriaArea,
-    coordenadas: readonly Vertice[],
-  ): AreaSuperficial {
-    return {
+    const borrador = this.borrador();
+    const categoria = this.modalCategoria();
+    const coordenadas = this.coordenadas().map((vertice) => ({ ...vertice }));
+    const grabada: AreaSuperficial = {
       id: borrador.id ?? this.nuevoId('a'),
       categoria,
       descripcion: borrador.descripcion.trim(),
@@ -833,59 +742,25 @@ export class DelimitacionComponent {
       // momento en que uno esté calculado y el otro no.
       geometry: wktPoligono(coordenadas),
     };
-  }
-
-  private agregarArea(area: AreaSuperficial): void {
-    this.coleccionDe(area.categoria).update((areas) => [...areas, area]);
-  }
-
-  private actualizarArea(id: string): void {
-    const area = this.areaSeleccionada();
-    const borrador = this.borrador();
-    const categoria = this.modalCategoria();
-    const coleccion = this.coleccionDe(categoria);
-
-    const actualizada: AreaSuperficial = {
-      id,
-      categoria,
-      descripcion: borrador.descripcion.trim(),
-      actividad: borrador.actividad.trim(),
-      zona: borrador.zona,
-      datum: DATUM,
-      // Los vértices se conservan: editar el rótulo no borra la geometría.
-      coordenadas: area?.id === id ? area.coordenadas : [],
-      geometry: area?.id === id ? area.geometry : '',
-    };
-    coleccion.update((areas) =>
-      areas.map((areaActual) => (areaActual.id === id ? actualizada : areaActual)),
+    this.coleccionDe(categoria).update((areas) =>
+      borrador.id !== null
+        ? areas.map((area) => (area.id === borrador.id ? grabada : area))
+        : [...areas, grabada],
     );
-    if (this.areaSeleccionada()?.id === id) {
-      this.areaSeleccionada.set(actualizada);
-    }
+
+    this.store.registrarAreaEfectiva(
+      this.coordenadasCompletas().map((vertice) => ({
+        este: vertice.este,
+        norte: vertice.norte,
+      })),
+    );
+    this.store.actualizarEstadoSeccion(this.numero(), 'VERDE');
+    this.cerrarModalArea();
   }
 
-  /**
-   * Sustituye el área activa y refleja el cambio en su colección.
-   *
-   * El área seleccionada es una instantánea: mutarla en sitio dejaría la
-   * grilla mostrando el valor viejo, porque la señal no habría cambiado de
-   * referencia.
-   *
-   * El WKT se recalcula aquí y no en cada punto de entrada porque esta es la
-   * única vía por la que cambian los vértices: derivarlo en los cinco llamadores
-   * que los tocan dejaría fuera alguno y el `geometry` acabaría describiendo un
-   * polígono que ya no es el dibujado.
-   */
-  private reemplazarArea(area: AreaSuperficial): void {
-    const consolidada: AreaSuperficial = {
-      ...area,
-      geometry: wktPoligono(area.coordenadas),
-    };
-    this.areaSeleccionada.set(consolidada);
-    this.coleccionDe(consolidada.categoria).update((areas) =>
-      areas.map((areaActual) => (areaActual.id === consolidada.id ? consolidada : areaActual)),
-    );
-  }
+  /* ------------------------------------------------------------------
+     SOPORTE INTERNO
+     ------------------------------------------------------------------ */
 
   private coleccionDe(categoria: TipoCategoriaArea) {
     return categoria === 'ACTIVIDAD' ? this.areasActividad : this.areasUso;

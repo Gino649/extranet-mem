@@ -131,7 +131,7 @@ describe('PersonalComponent', () => {
     fixture: ComponentFixture<PersonalComponent>,
     indiceFila: number,
   ): Promise<void> {
-    botonEn(filasDe(fixture)[indiceFila]!, 'Configurar').click();
+    botonEn(filasDe(fixture)[indiceFila]!, 'Editar').click();
     await asentar(fixture);
   }
 
@@ -212,7 +212,8 @@ describe('PersonalComponent', () => {
       }
       // Ninguna etapa nace dotada: el titular declara personal por etapa.
       expect(texto).toContain('Pendiente');
-      expect(texto).toContain('Por configurar...');
+      expect(texto).toContain('--');
+      expect(texto).toContain('...');
     });
 
     it('no deja ningún input dentro de la grilla', async () => {

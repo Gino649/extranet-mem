@@ -1,0 +1,310 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR OBLIGATORIA DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección 6.1</p>
+    <h1 class="titulo">Consultora Ambiental y Profesionales</h1>
+    <p class="bajada">
+      Vincule la Consultora Ambiental autorizada por el MINEM encargada de la elaboración del
+      estudio y declare el staff de profesionales que suscriben el expediente.
+    </p>
+  </div>
+
+  <div class="space-y-6 mt-6">
+    <!-- ========================================================== -->
+    <!-- BLOQUE A: SELECCIÓN DE CONSULTORA AMBIENTAL                -->
+    <!-- ========================================================== -->
+    <div
+      class="bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-inner flex flex-col sm:flex-row justify-between sm:items-center gap-4"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="h-10 w-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-lg select-none"
+        >
+          🏢
+        </div>
+        <div>
+          <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide"
+            >Consultora Ambiental Autorizada</span
+          >
+          <span
+            class="block mt-0.5 font-black text-xs"
+            [class.text-slate-900]="consultoraSeleccionada()"
+            [class.text-red-500]="!consultoraSeleccionada()"
+            [class.animate-pulse]="!consultoraSeleccionada()"
+          >
+            {{
+              consultoraSeleccionada()
+                ? consultoraSeleccionada()?.razonSocial
+                : '-- Requiere Vincular Consultora Ambiental --'
+            }}
+          </span>
+          @if (consultoraSeleccionada()) {
+            <span
+              class="inline-block font-mono text-[9px] font-bold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded mt-1"
+            >
+              REG. MINEM: {{ consultoraSeleccionada()?.nroRegistro }}
+            </span>
+          }
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="abrirModalConsultorasPadrons()"
+        class="px-4 py-2 border border-slate-200 hover:border-slate-300 bg-white text-slate-700 font-bold rounded-xl text-xs shadow-sm transition-all cursor-pointer whitespace-nowrap"
+      >
+        {{ consultoraSeleccionada() ? '🔄 Cambiar Consultora' : '🔍 Seleccionar Consultora' }}
+      </button>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- BLOQUE B: GRILLA DE PROFESIONALES (SE ACTIVA CON CONSULTORA)-->
+    <!-- ========================================================== -->
+    <div
+      class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm"
+      [class.opacity-40]="!consultoraSeleccionada()"
+    >
+      <div class="flex justify-between items-center mb-4 select-none">
+        <h5
+          class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5"
+        >
+          <span>👥</span> 6.1. Equipo de Profesionales de la Consultora
+        </h5>
+        <button
+          type="button"
+          (click)="abrirModalProfesionalesStaff()"
+          [disabled]="!consultoraSeleccionada()"
+          class="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 disabled:from-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-slate-950 font-black rounded-lg text-xs tracking-wide uppercase shadow-sm transition-all cursor-pointer"
+        >
+          ＋ Agregar Profesional
+        </button>
+      </div>
+
+      <!-- Tabla Limpia de Profesionales Asignados -->
+      <div class="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px] select-none"
+            >
+              <th class="p-3 w-12 text-center">N°</th>
+              <th class="p-3">Nombres y Apellidos del Profesional</th>
+              <th class="p-3 w-64">Profesión / Especialidad</th>
+              <th class="p-3 w-20 text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (prof of profesionalesAsignados(); track prof.id; let i = $index) {
+              <tr
+                class="border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-colors font-medium text-slate-700"
+              >
+                <td class="p-3 text-slate-400 font-mono font-bold text-center select-none">
+                  {{ i + 1 }}
+                </td>
+                <td class="p-3 font-bold text-slate-900">{{ prof.nombres }}</td>
+                <td
+                  class="p-3 font-semibold text-amber-700 bg-amber-500/[0.01] uppercase text-[11px]"
+                >
+                  {{ prof.profesion }}
+                </td>
+                <td class="p-3 text-center">
+                  <button
+                    type="button"
+                    (click)="removerProfesionalStaff(prof.id)"
+                    class="h-7 w-7 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all cursor-pointer font-bold text-xs"
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="p-4 text-center text-slate-400 font-medium bg-white">
+                  {{
+                    consultoraSeleccionada()
+                      ? 'No hay profesionales asignados. Presione "Agregar Profesional" para estructurar el staff.'
+                      : 'Vincule una Consultora Ambiental para habilitar el registro del staff de ingenieros.'
+                  }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botonera de Validación de la Sección -->
+  <div class="pt-4 mt-6 flex justify-end border-t border-slate-100">
+    <button
+      type="button"
+      (click)="guardarYValidarConsultorasSeccion()"
+      [disabled]="!seccionTotalmenteValida()"
+      class="cursor-pointer rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-6 py-3.5 text-xs font-black tracking-wider text-slate-950 uppercase shadow-md transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:from-slate-100 disabled:via-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:shadow-none;"
+    >
+      Guardar y Validar Capítulo VI
+    </button>
+  </div>
+</section>
+
+<!-- ========================================================== -->
+<!-- MODAL A: PADRÓN OFICIAL DE CONSULTORAS DEL MINEM          -->
+<!-- ========================================================== -->
+@if (modalConsultorasAbierto()) {
+  <div
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-modal-consultoras"
+  >
+    <div
+      class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-md animate-zoom-in"
+    >
+      <div
+        class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 select-none"
+      >
+        <h4
+          id="titulo-modal-consultoras"
+          class="text-xs font-black text-slate-900 uppercase tracking-tight"
+        >
+          Registro de Consultoras Ambientales
+        </h4>
+        <button
+          type="button"
+          (click)="cerrarModalConsultorasPadrons()"
+          aria-label="Cerrar"
+          class="text-slate-400 hover:text-slate-600 font-bold"
+        >
+          ✕
+        </button>
+      </div>
+      <!-- Listado de Selección Directa -->
+      <div class="space-y-2 max-h-[300px] overflow-y-auto">
+        @for (c of padronConsultoras(); track c.id) {
+          <div
+            (click)="seleccionarConsultoraEmpresa(c)"
+            class="p-3 border border-slate-200 rounded-xl bg-white hover:border-amber-500 hover:bg-amber-500/[0.01] transition-all cursor-pointer flex justify-between items-center group"
+          >
+            <div>
+              <span class="block text-xs font-black text-slate-900 group-hover:text-amber-700">{{
+                c.razonSocial
+              }}</span>
+              <span class="block text-[10px] text-slate-400 font-mono mt-0.5"
+                >N° Registro: {{ c.nroRegistro }}</span
+              >
+            </div>
+            <span class="text-slate-300 group-hover:text-amber-500 font-black text-xs">➔</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ========================================================== -->
+<!-- MODAL B: ASIGNACIÓN MÚLTIPLE DE PROFESIONALES CON BUSCADOR -->
+<!-- ========================================================== -->
+@if (modalProfAbierto()) {
+  <div
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-modal-staff"
+  >
+    <div
+      class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-lg animate-zoom-in max-h-[85vh] overflow-hidden flex flex-col"
+    >
+      <!-- Cabecera del Popup -->
+      <div
+        class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3 select-none"
+      >
+        <h4
+          id="titulo-modal-staff"
+          class="text-xs font-black text-slate-900 uppercase tracking-tight"
+        >
+          Staff Autorizado: {{ consultoraSeleccionada()?.razonSocial }}
+        </h4>
+        <button
+          type="button"
+          (click)="cerrarModalProfesionalesStaff()"
+          aria-label="Cerrar"
+          class="text-slate-400 hover:text-slate-600 font-bold"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- BUSCADOR REACTIVO EN LA CABECERA DEL POPUP -->
+      <div class="mb-3 relative rounded-xl shadow-inner select-none">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs">🔍</span>
+        <input
+          type="text"
+          [ngModel]="filtroBusquedaNombre()"
+          (ngModelChange)="filtroBusquedaNombre.set($event)"
+          placeholder="Buscar especialista por nombres o apellidos..."
+          class="w-full pl-8 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:border-amber-500 focus:outline-none shadow-inner"
+        />
+      </div>
+
+      <!-- CONTENEDOR DE LA TABLA INTEGRADA CON SCROLL INDEPENDIENTE -->
+      <div
+        class="flex-1 overflow-y-auto border border-slate-200 rounded-xl shadow-inner bg-slate-50/20"
+      >
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="sticky top-0 z-10 select-none bg-slate-100 border-b border-slate-200">
+            <tr class="text-slate-500 font-bold uppercase tracking-wider text-[9px]">
+              <th class="p-2.5 w-12 text-center">Sel.</th>
+              <th class="p-2.5 text-left">Especialista / Profesional</th>
+              <th class="p-2.5 text-left w-48">Profesión</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of staffFiltradoPorNombre(); track p.id) {
+              <tr
+                class="border-b border-slate-100 bg-white hover:bg-slate-50/40 transition-colors font-medium"
+              >
+                <td class="p-2.5 text-center">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="p.seleccionado"
+                    class="h-4 w-4 rounded text-amber-600 focus:ring-amber-500/20 cursor-pointer"
+                  />
+                </td>
+                <td class="p-2.5 font-bold text-slate-900 text-left">{{ p.nombres }}</td>
+                <td class="p-2.5 font-mono text-[11px] text-slate-600 uppercase text-left">
+                  {{ p.profesion }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td
+                  colspan="3"
+                  class="p-5 text-center text-slate-400 font-semibold bg-white select-none"
+                >
+                  No se encontraron profesionales que coincidan con la búsqueda.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BOTONERA DE CONTROL DE CIERRE DE POPUP -->
+      <div class="pt-3 mt-4 border-t border-slate-100 flex justify-end gap-2 select-none">
+        <button
+          type="button"
+          (click)="cerrarModalProfesionalesStaff()"
+          class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="confirmarInyeccionStaffBloque()"
+          class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-xl text-xs uppercase shadow-sm cursor-pointer"
+        >
+          Asignar al Staff
+        </button>
+      </div>
+    </div>
+  </div>
+}

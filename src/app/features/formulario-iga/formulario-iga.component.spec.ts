@@ -41,11 +41,11 @@ describe('FormularioIgaComponent', () => {
     return Array.from(raiz.querySelectorAll('a.capitulo-boton')) as HTMLAnchorElement[];
   }
 
-  /** Las 27 secciones del árbol, incluidas las dos sub-capas del capítulo 5. */
+  /** Las 28 secciones del árbol, incluidas las dos sub-capas del capítulo 5. */
   function todasLasSecciones(store: DaexStore) {
-    return store.capitulos().flatMap((capitulo) =>
-      capitulo.secciones.flatMap((seccion) => [seccion, ...seccion.hijos]),
-    );
+    return store
+      .capitulos()
+      .flatMap((capitulo) => capitulo.secciones.flatMap((seccion) => [seccion, ...seccion.hijos]));
   }
 
   /** Deja el semáforo entero en verde, para partir de un DAEX limpio. */
@@ -108,7 +108,7 @@ describe('FormularioIgaComponent', () => {
       expect(boton.getAttribute('title')).toContain('siguen pendientes');
     });
 
-    it('habilita el envío solo con las 27 secciones en verde', async () => {
+    it('habilita el envío solo con las 28 secciones en verde', async () => {
       const { fixture, store, raiz } = await montar();
 
       cerrarActas(store);
@@ -132,11 +132,11 @@ describe('FormularioIgaComponent', () => {
       expect(store.puedeRemitir()).toBe(false);
     });
 
-    it('calcula el avance sobre las 27 secciones', async () => {
+    it('calcula el avance sobre las 28 secciones', async () => {
       const { store } = await montar();
-      expect(store.totalSecciones()).toBe(27);
+      expect(store.totalSecciones()).toBe(28);
       // La semilla trae 5 secciones en verde.
-      expect(store.avanceExpediente()).toBe(Math.round((5 / 27) * 100));
+      expect(store.avanceExpediente()).toBe(Math.round((5 / 28) * 100));
     });
   });
 
@@ -194,7 +194,7 @@ describe('FormularioIgaComponent', () => {
     /**
      * El caso que distingue esta regla de la anterior.
      *
-     * Observado, lo que se manda son subsanaciones: exigir las 27 secciones en
+     * Observado, lo que se manda son subsanaciones: exigir las 28 secciones en
      * verde bloquearía al titular que solo tiene que responder al acta.
      */
     it('basta con responder el acta, sin dejar el resto del expediente completo', async () => {
@@ -327,12 +327,12 @@ describe('FormularioIgaComponent', () => {
         ['1', 3],
         ['2', 11],
         ['3', 4],
-        ['4', 1],
+        ['4', 2],
         ['5', 3],
         ['6', 2],
         ['7', 1],
       ]);
-      expect(store.totalSecciones()).toBe(27);
+      expect(store.totalSecciones()).toBe(28);
     });
 
     it('anida las dos sub-capas de influencia dentro de 5.2', async () => {
@@ -376,11 +376,11 @@ describe('FormularioIgaComponent', () => {
       expect(aside.textContent).not.toMatch(/\d+\.\d+/);
     });
 
-    it('conserva los 27 submenús en el store aunque no se pinten', async () => {
+    it('conserva los 28 submenús en el store aunque no se pinten', async () => {
       const { store } = await montar();
 
       // La granularidad fina no se pierde: solo deja de duplicarse en el índice.
-      expect(store.totalSecciones()).toBe(27);
+      expect(store.totalSecciones()).toBe(28);
       expect(store.seccionPorNumero('2.11')?.titulo).toBeTruthy();
     });
 
@@ -559,6 +559,80 @@ describe('FormularioIgaComponent', () => {
       expect(menu.textContent).toContain('Expediente DAEX');
       expect(menu.textContent).toContain('Información General');
       expect(menu.textContent).not.toContain('Listado Solicitudes');
+    });
+  });
+
+  /* ------------------------------------------------------------------
+     CIERRE DEL EXPEDIENTE · Cortina de transmisión y acuse de recibo
+     ------------------------------------------------------------------
+     El envío levanta una cortina de espera, estampa un acuse con ficha
+     técnica institucional y regresa a la bandeja. La remisión se registra
+     solo cuando la transmisión concluye: un abandono a mitad de envío deja
+     el store diciendo que nada se ha mandado.
+     ------------------------------------------------------------------ */
+  describe('Cierre del expediente: cortina de espera y acuse', () => {
+    it('no pinta la cortina ni el acuse cuando el guardián sigue bloqueando', async () => {
+      const { fixture, store, raiz } = await montar();
+      cerrarActas(store);
+      fixture.detectChanges();
+
+      const boton = elemento<HTMLButtonElement>(raiz, '.boton-envio');
+      expect(boton.disabled).toBe(true);
+
+      boton.click();
+      fixture.detectChanges();
+
+      expect(raiz.querySelector('.cortina-transmision')).toBeNull();
+      expect(raiz.querySelector('.modal-acuse')).toBeNull();
+      expect(store.ultimaRemision('NUEVO')).toBeNull();
+    });
+
+    /*
+     * Es la única prueba con reloj real de toda la suite: el retardo de 3,5 s
+     * es una decisión de presentación del módulo, y la cortina existe para que
+     * no se confunda con la espera real de red. Comprobar que la remisión no
+     * se registra hasta que la transmisión concluye exige dejarla correr.
+     */
+    it('levanta la cortina, remite al concluir y estampa el acuse al volver a la bandeja', async () => {
+      const { fixture, store, raiz } = await montar();
+      cerrarActas(store);
+      ponerTodoEnVerde(store);
+      fixture.detectChanges();
+
+      const boton = elemento<HTMLButtonElement>(raiz, '.boton-envio');
+      expect(boton.disabled).toBe(false);
+
+      boton.click();
+      fixture.detectChanges();
+
+      // La cortina tapa la pantalla y, todavía, ni acuse ni remisión.
+      expect(elemento<HTMLElement>(raiz, '.cortina-transmision')).toBeTruthy();
+      expect(raiz.querySelector('.modal-acuse')).toBeNull();
+      expect(store.ultimaRemision('NUEVO')).toBeNull();
+
+      // Dejar terminar la transmisión simulada de 3,5 segundos.
+      await new Promise((resolver) => setTimeout(resolver, 3600));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(raiz.querySelector('.cortina-transmision')).toBeNull();
+      expect(store.ultimaRemision('NUEVO')).toBeTruthy();
+
+      // El acuse trae la ficha técnica con las marcas del servidor.
+      const acuse = elemento<HTMLElement>(raiz, '.modal-acuse');
+      const texto = acuse.textContent ?? '';
+      expect(texto).toContain('Solicitud Enviada con Éxito');
+      expect(texto).toMatch(/EXP-\d{6}-20\d{2}-DGAAM/);
+      expect(texto).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+      expect(texto).toContain('EN EVALUACIÓN TÉCNICA');
+
+      // Confirmar el acuse cierra el modal y regresa a la bandeja.
+      elemento<HTMLButtonElement>(acuse, 'button').click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(raiz.querySelector('.modal-acuse')).toBeNull();
+      expect(TestBed.inject(Router).url).toBe('/workspace');
     });
   });
 });

@@ -1,0 +1,291 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR OBLIGATORIA DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">
+      {{ seccion()?.titulo ?? 'Impactos ambientales, estrategias de manejo y cierre' }}
+    </h1>
+    <p class="bajada">
+      Establezca la matriz de compromisos ambientales correlacionando las etapas y actividades con
+      sus respectivas estrategias de manejo, plazos y presupuestos asociados.
+    </p>
+  </div>
+
+  <!-- CONTROL DE LA MATRIZ DE IMPACTOS -->
+  <div class="space-y-4 mt-6">
+    <div
+      class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200/60 shadow-inner"
+    >
+      <h5
+        class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5"
+      >
+        <span>📋</span> Matriz de Estrategias de Manejo y Cierre Ambiental
+      </h5>
+      <button
+        type="button"
+        (click)="abrirModalImpacto(null)"
+        class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-lg text-xs tracking-wide uppercase transition-all shadow-sm cursor-pointer"
+      >
+        ＋ Nuevo Registro
+      </button>
+    </div>
+
+    <!-- Grilla de Alta Densidad Informativa con Scroll Horizontal Controlado -->
+    <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+      <table class="w-full text-left text-[11px] border-collapse min-w-[1300px]">
+        <thead>
+          <tr
+            class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[9px] select-none text-center"
+          >
+            <th class="p-3 w-10">N°</th>
+            <th class="p-3 w-36 text-left">Etapa del proyecto</th>
+            <th class="p-3 text-left w-44">Actividades</th>
+            <th class="p-3 text-left w-44">Componente ambiental/<br />Factor social</th>
+            <th class="p-3 text-left w-44">Aspectos ambientales</th>
+            <th class="p-3 text-left w-44">Impactos ambientales/<br />sociales</th>
+            <th class="p-3 text-left w-56">Estrategia de Manejo Ambiental</th>
+            <th class="p-3 w-36">Plazo / Frecuencia de<br />implementación</th>
+            <th class="p-3 w-32 text-slate-900 font-black">Presupuesto (S/.)</th>
+            <th class="p-3 w-24">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of compromisos(); track item.id; let i = $index) {
+            <tr
+              class="border-b border-slate-100 bg-white hover:bg-slate-50/40 transition-colors font-medium text-slate-700"
+            >
+              <td class="p-3 text-slate-400 font-mono font-bold text-center select-none">
+                {{ i + 1 }}
+              </td>
+              <td class="p-3 font-bold text-slate-900 uppercase text-[10px]">{{ item.etapa }}</td>
+              <td class="p-3 text-slate-600 leading-relaxed">{{ item.actividades }}</td>
+              <td class="p-3 text-slate-600 leading-relaxed">{{ item.componenteFactor }}</td>
+              <td class="p-3 text-slate-600 leading-relaxed">{{ item.aspectos }}</td>
+              <td class="p-3 text-slate-600 leading-relaxed font-semibold">{{ item.impactos }}</td>
+              <td class="p-3 text-slate-700 leading-relaxed bg-slate-50/10">
+                {{ item.estrategiaManejo }}
+              </td>
+              <td class="p-3 text-center text-slate-600 font-medium">{{ item.plazoFrecuencia }}</td>
+
+              <!-- Presupuesto Formateado en Soles -->
+              <td class="p-3 font-mono font-black text-right text-slate-900 bg-slate-50/30">
+                S/ {{ item.presupuesto | number: '1.2-2' }}
+              </td>
+
+              <td class="p-3 text-center space-x-1">
+                <button
+                  type="button"
+                  (click)="abrirModalImpacto(item)"
+                  class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold rounded text-[11px] cursor-pointer"
+                >
+                  ✏️
+                </button>
+                <button
+                  type="button"
+                  (click)="removerCompromiso(item.id)"
+                  class="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold rounded text-[11px] cursor-pointer"
+                >
+                  ✕
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="10" class="p-5 text-center text-slate-400 font-medium bg-white">
+                No hay registros ambientales guardados en la matriz. Presione "Nuevo Registro" para
+                abrir el formulario modal.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pie: presupuesto consolidado de los compromisos declarados -->
+    @if (compromisos().length > 0) {
+      <div
+        class="flex justify-end items-center gap-2 text-xs bg-slate-50 border border-slate-200/70 rounded-lg px-4 py-2 select-none"
+      >
+        <span class="font-bold text-slate-500 uppercase tracking-wide text-[10px]"
+          >Total de compromisos ambientales</span
+        >
+        <span class="font-mono font-black text-slate-900 text-sm"
+          >S/ {{ presupuestoTotal() | number: '1.2-2' }}</span
+        >
+      </div>
+    }
+  </div>
+
+  <!-- Botonera de Validación de la Sección -->
+  <div class="pt-4 mt-6 flex justify-end border-t border-slate-100">
+    <button
+      type="button"
+      (click)="guardarYValidarImpactosSeccion()"
+      [disabled]="!matrizValida()"
+      class="cursor-pointer rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-6 py-3.5 text-xs font-black tracking-wider text-slate-950 uppercase shadow-md transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:from-slate-100 disabled:via-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:shadow-none;"
+    >
+      Guardar y Validar Sección {{ numero() }}
+    </button>
+  </div>
+</section>
+
+<!-- ========================================================== -->
+<!-- POPUP CENTRALIZADO CRUD: REGISTRO DE ESTRATEGIA AMBIENTAL   -->
+<!-- ========================================================== -->
+@if (modalAbierto()) {
+  <div
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+    (click)="cerrarModalImpacto()"
+  >
+    <div
+      class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-2xl animate-zoom-in max-h-[90vh] overflow-y-auto"
+      (click)="$event.stopPropagation()"
+    >
+      <div
+        class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 select-none"
+      >
+        <h4 class="text-xs font-black text-slate-900 uppercase tracking-tight">
+          {{ modalEsEdicion() ? 'Editar' : 'Nuevo' }} Registro de Estrategia de Manejo y Cierre
+        </h4>
+        <button
+          type="button"
+          (click)="cerrarModalImpacto()"
+          class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs font-bold text-slate-700">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >Etapa del Proyecto *</label
+            >
+            <select
+              [ngModel]="modalData()?.etapa"
+              (ngModelChange)="alElegirEtapa($event)"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none shadow-inner"
+            >
+              <option value="" disabled>-- Seleccione Etapa --</option>
+              @for (etapa of etapas; track etapa) {
+                <option [value]="etapa">{{ etapa }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >Presupuesto Estimado (S/.) *</label
+            >
+            <input
+              type="number"
+              min="0"
+              [ngModel]="modalData()?.presupuesto"
+              (ngModelChange)="editarPresupuesto($event)"
+              placeholder="0.00"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >Actividades Evaluadas *</label
+            >
+            <textarea
+              [ngModel]="modalData()?.actividades"
+              (ngModelChange)="editarBorrador('actividades', $event)"
+              rows="2"
+              placeholder="Ej. Perforación diamantina, transporte de insumos..."
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none shadow-inner resize-none"
+            ></textarea>
+          </div>
+          <div>
+            <label class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >Componente Ambiental / Factor Social *</label
+            >
+            <textarea
+              [ngModel]="modalData()?.componenteFactor"
+              (ngModelChange)="editarBorrador('componenteFactor', $event)"
+              rows="2"
+              placeholder="Ej. Calidad de aire, nivel de ruido, comunidad colindante..."
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none shadow-inner resize-none"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >Aspectos Ambientales *</label
+            >
+            <textarea
+              [ngModel]="modalData()?.aspectos"
+              (ngModelChange)="editarBorrador('aspectos', $event)"
+              rows="2"
+              placeholder="Ej. Generación de material particulado, emisiones de gases de combustión..."
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none shadow-inner resize-none"
+            ></textarea>
+          </div>
+          <div>
+            <label class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+              >Impactos Ambientales / Sociales *</label
+            >
+            <textarea
+              [ngModel]="modalData()?.impactos"
+              (ngModelChange)="editarBorrador('impactos', $event)"
+              rows="2"
+              placeholder="Ej. Alteración potencial de la calidad del aire local..."
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none shadow-inner resize-none"
+            ></textarea>
+          </div>
+        </div>
+
+        <div>
+          <label class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide">
+            Estrategia de Manejo Ambiental * (Manejo¹, Vigilancia², Contingencia³, Comunicación⁴)
+          </label>
+          <textarea
+            [ngModel]="modalData()?.estrategiaManejo"
+            (ngModelChange)="editarBorrador('estrategiaManejo', $event)"
+            rows="3"
+            placeholder="Ej. Implementación de riego de accesos, programa de monitoreo bimestral de aire, plan de contingencias ante derrames..."
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none focus:border-amber-500 shadow-inner resize-none"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="block uppercase mb-1 text-[10px] text-slate-400 font-black tracking-wide"
+            >Plazo / Frecuencia de Implementación *</label
+          >
+          <input
+            type="text"
+            [ngModel]="modalData()?.plazoFrecuencia"
+            (ngModelChange)="editarBorrador('plazoFrecuencia', $event)"
+            placeholder="Ej. Diario durante la perforación / Bimestral"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none shadow-inner"
+          />
+        </div>
+      </div>
+
+      <div class="pt-4 mt-4 border-t border-slate-100 flex justify-end gap-2">
+        <button
+          type="button"
+          (click)="cerrarModalImpacto()"
+          class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="procesarGuardadoImpactoModal()"
+          [disabled]="!modalDataValido()"
+          class="px-5 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black rounded-xl text-xs uppercase shadow-sm cursor-pointer disabled:from-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+        >
+          Grabar Registro
+        </button>
+      </div>
+    </div>
+  </div>
+}

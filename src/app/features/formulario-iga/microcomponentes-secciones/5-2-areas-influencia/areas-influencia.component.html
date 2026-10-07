@@ -1,0 +1,374 @@
+<section class="tarjeta">
+  <!-- CABECERA ESTÁNDAR DEL PROYECTO -->
+  <div class="cabecera">
+    <p class="etiqueta">Sección {{ numero() }}</p>
+    <h1 class="titulo">{{ seccion()?.titulo ?? 'Área de Influencia' }}</h1>
+    <p class="bajada">
+      {{
+        seccion()?.descripcion ??
+          'Inventario de áreas de influencia ambiental y social con captura de polígonos en UTM.'
+      }}
+    </p>
+  </div>
+
+  <!-- BLOQUE 5.2.1 · INVENTARIO DE INFLUENCIA AMBIENTAL -->
+  <div class="bloque">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h5 class="rotulo-bloque">🌍 5.2.1 · Áreas de Influencia Ambiental (Directa e Indirecta)</h5>
+      <button type="button" class="boton-tenue" (click)="abrirModalNuevo('AMBIENTAL')">
+        ＋ Nueva Área Ambiental
+      </button>
+    </div>
+
+    <div class="marco-tabla">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="encabezado">
+            <th>N°</th>
+            <th>Tipo</th>
+            <th>Nombre del Área</th>
+            <th>Zona UTM</th>
+            <th>Datum</th>
+            <th>Vértices</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (area of areasAmbientales(); track area.id; let i = $index) {
+            <tr class="fila">
+              <td class="p-3 text-slate-400">{{ i + 1 }}</td>
+              <td class="p-3 font-bold text-slate-800 uppercase text-[10px]">{{ area.tipo }}</td>
+              <td class="p-3 font-semibold text-slate-800">{{ area.nombre }}</td>
+              <td class="p-3 text-slate-600">{{ area.zona }}</td>
+              <td class="p-3 text-slate-500">{{ area.datum }}</td>
+              <td class="p-3 text-slate-600">{{ area.vertices.length }}</td>
+              <td class="p-3 text-right whitespace-nowrap">
+                <button type="button" class="boton-enlace" (click)="abrirModalEditar(area)">
+                  ✏️ Delimitar
+                </button>
+                <button
+                  type="button"
+                  class="boton-enlace boton-enlace--peligro"
+                  (click)="eliminarAreaCompleta(area.id)"
+                >
+                  ✕ Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="celda-vacia">
+                No hay áreas de influencia ambiental registradas. Presione "Nueva Área Ambiental"
+                para abrir el modal de captura.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BLOQUE 5.2.2 · INVENTARIO DE INFLUENCIA SOCIAL -->
+  <div class="bloque">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h5 class="rotulo-bloque">👥 5.2.2 · Áreas de Influencia Social (Directa e Indirecta)</h5>
+      <button type="button" class="boton-tenue" (click)="abrirModalNuevo('SOCIAL')">
+        ＋ Nueva Área Social
+      </button>
+    </div>
+
+    <div class="marco-tabla">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="encabezado">
+            <th>N°</th>
+            <th>Tipo</th>
+            <th>Nombre del Área</th>
+            <th>Zona UTM</th>
+            <th>Datum</th>
+            <th>Vértices</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (area of areasSociales(); track area.id; let i = $index) {
+            <tr class="fila">
+              <td class="p-3 text-slate-400">{{ i + 1 }}</td>
+              <td class="p-3 font-bold text-slate-800 uppercase text-[10px]">{{ area.tipo }}</td>
+              <td class="p-3 font-semibold text-slate-800">{{ area.nombre }}</td>
+              <td class="p-3 text-slate-600">{{ area.zona }}</td>
+              <td class="p-3 text-slate-500">{{ area.datum }}</td>
+              <td class="p-3 text-slate-600">{{ area.vertices.length }}</td>
+              <td class="p-3 text-right whitespace-nowrap">
+                <button type="button" class="boton-enlace" (click)="abrirModalEditar(area)">
+                  ✏️ Delimitar
+                </button>
+                <button
+                  type="button"
+                  class="boton-enlace boton-enlace--peligro"
+                  (click)="eliminarAreaCompleta(area.id)"
+                >
+                  ✕ Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="celda-vacia">
+                No hay áreas de influencia social registradas. Presione "Nueva Área Social" para
+                abrir el modal de captura.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BOTONERA DE VALIDACIÓN DE LA SECCIÓN -->
+  <div class="pt-4 mt-6 flex justify-end border-t border-slate-100">
+    <button
+      type="button"
+      (click)="guardarYValidarAreasInfluenciaSeccion()"
+      [disabled]="!grillaValida()"
+      class="cursor-pointer rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-6 py-3.5 text-xs font-black tracking-wider text-slate-950 uppercase shadow-md transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:from-slate-100 disabled:via-slate-100 disabled:to-slate-100 disabled:text-slate-400 disabled:shadow-none;"
+    >
+      Guardar y Validar Sección {{ numero() }}
+    </button>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- POPUP CENTRALIZADO · SÚPER MODAL GIS DE CAPTURA                  -->
+<!-- =============================================================== -->
+@if (modalAbierto()) {
+  <div class="velo" (click)="cerrarModalArea()">
+    <div class="modalo" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="modalo-cabecera">
+        <button type="button" class="modalo-cerrar" aria-label="Cerrar" (click)="cerrarModalArea()">
+          &times;
+        </button>
+        <p class="etiqueta">
+          {{ modalCategoria() === 'AMBIENTAL' ? 'Influencia ambiental' : 'Influencia social' }}
+        </p>
+        <h3 class="titulo">
+          {{ modalEsEdicion() ? 'Editar área de influencia' : 'Nueva área de influencia' }}
+        </h3>
+      </header>
+
+      <div class="modalo-cuerpo">
+        @if (aviso(); as mensaje) {
+          <p class="aviso">{{ mensaje }}</p>
+        }
+
+        <!-- DATOS DEL ÁREA -->
+        <div class="grilla-datos">
+          <div class="campo">
+            <label for="area-influencia-nombre">Nombre del área de influencia *</label>
+            <input
+              id="area-influencia-nombre"
+              type="text"
+              placeholder="Ej. Comunidad campesina de Acchilla"
+              [value]="modalData().nombre"
+              (input)="alEscribirNombre($event)"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="area-influencia-tipo">Tipo de Área *</label>
+            <select
+              id="area-influencia-tipo"
+              [value]="modalData().tipo"
+              (change)="alElegirTipo($event)"
+            >
+              @for (tipo of tipos; track tipo) {
+                <option [value]="tipo">{{ tipo }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="area-influencia-zona">Zona UTM *</label>
+            <select
+              id="area-influencia-zona"
+              [value]="modalData().zona"
+              (change)="alElegirZona($event)"
+            >
+              @for (zona of zonas; track zona) {
+                <option [value]="zona">{{ zona }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="area-influencia-datum">Datum</label>
+            <input id="area-influencia-datum" type="text" [value]="modalData().datum" disabled />
+          </div>
+        </div>
+
+        <!--
+          VISTA PARTIDA · VÉRTICES A LA IZQUIERDA, VISOR A LA DERECHA
+
+          Lado a lado y no apilados porque se leen en el mismo instante: quien
+          corrige un vértice necesita ver la geometría que ese vértice dibuja.
+          Apilados, una importación de cientos de filas dejaba el mapa fuera de
+          pantalla y había que subir y bajar para contrastar ambos bloques.
+        -->
+        <div class="panel-dual">
+          <!-- PANEL IZQUIERDO · VÉRTICES -->
+          <section class="panel-dual__columna panel-dual__columna--vertices">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h6 class="rotulo-panel">Vértices de la geometría</h6>
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="boton-tenue cursor-pointer">
+                  Cargar CSV
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    class="sr-only"
+                    (change)="alCargarCSVInfluencia($event)"
+                  />
+                </label>
+                <label class="boton-tenue cursor-pointer">
+                  Cargar SHP (.zip)
+                  <input
+                    type="file"
+                    accept=".shp,.zip,application/zip"
+                    class="sr-only"
+                    (change)="alCargarShapefileInfluencia($event)"
+                  />
+                </label>
+                <button type="button" class="boton-tenue" (click)="agregarVerticeManual()">
+                  ＋ Vértice
+                </button>
+                <button
+                  type="button"
+                  class="boton-tenue"
+                  (click)="limpiarEstructuraMapaInfluencia()"
+                >
+                  Limpiar estructura
+                </button>
+              </div>
+            </div>
+
+            <!--
+              `contenedor-tabla-vertices` y no `marco-tabla` a secas: el alto
+              congelado y el scroll interno contienen una importación masiva.
+            -->
+            <div class="marco-tabla contenedor-tabla-vertices">
+              <table class="w-full border-separate border-spacing-0 text-left text-xs">
+                <thead>
+                  <tr class="encabezado">
+                    <th>#</th>
+                    <th>Este (m)</th>
+                    <th>Norte (m)</th>
+                    <th class="text-right">✕</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (vertice of coordenadasVisibles(); track vertice.id; let indice = $index) {
+                    <tr class="fila">
+                      <td class="p-3 text-slate-400">{{ indice + 1 }}</td>
+                      <td class="p-3">
+                        <input
+                          type="number"
+                          class="celda-coordenada"
+                          [value]="vertice.este ?? ''"
+                          (input)="alEscribirVertice(vertice.id, 'este', $event)"
+                          placeholder="Este"
+                        />
+                      </td>
+                      <td class="p-3">
+                        <input
+                          type="number"
+                          class="celda-coordenada"
+                          [value]="vertice.norte ?? ''"
+                          (input)="alEscribirVertice(vertice.id, 'norte', $event)"
+                          placeholder="Norte"
+                        />
+                      </td>
+                      <td class="p-3 text-right">
+                        <button
+                          type="button"
+                          class="boton-enlace boton-enlace--peligro text-sm leading-none"
+                          (click)="eliminarVerticeFila(vertice.id)"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="celda-vacia">
+                        Sin vértices. Agregue filas o importe un CSV / Shapefile.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 mt-3">
+              <span class="text-[11px] font-bold text-slate-400">
+                Mostrando {{ coordenadasVisibles().length }} de {{ coordenadas().length }} vértices
+              </span>
+              <span
+                class="text-[11px] font-bold"
+                [class.text-emerald-700]="coordenadasValidas()"
+                [class.text-amber-700]="!coordenadasValidas()"
+              >
+                {{ estadoGeometrico() }}
+              </span>
+            </div>
+          </section>
+
+          <!-- PANEL DERECHO · VISOR OPENLAYERS -->
+          <section class="panel-dual__columna panel-dual__columna--mapa">
+            <h6 class="rotulo-panel">🗺️ Plano de referencia · OpenLayers</h6>
+
+            <div class="marco-visor">
+              <!--
+                El id no duplica la clase: fija el alto del lienzo por
+                especificidad, y `#mapaContainer` es el ancla del montaje.
+              -->
+              <div #mapaContainer id="mapa-influencia-core" class="lienzo-mapa"></div>
+
+              <div class="leyenda-visor">
+                <p class="text-xs font-bold text-slate-800">
+                  {{ modalData().nombre || (modalEsEdicion() ? 'Área en edición' : 'Nueva área') }}
+                </p>
+                <p class="text-[11px] text-slate-500">
+                  {{ modalData().tipo }} · {{ modalData().zona }} · {{ modalData().datum }}
+                </p>
+                <p
+                  class="text-[11px] font-semibold"
+                  [class.text-emerald-700]="coordenadasValidas()"
+                  [class.text-amber-700]="!coordenadasValidas()"
+                >
+                  {{ estadoGeometrico() }}
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <footer class="modalo-pie">
+        <p class="modalo-pie-aviso">
+          @if (!modalDataValido() || !coordenadasValidas()) {
+            Complete el nombre y al menos dos vértices para grabar
+          }
+        </p>
+        <button type="button" class="boton-tenue" (click)="cerrarModalArea()">Cancelar</button>
+        <button
+          type="button"
+          class="boton-oro"
+          [disabled]="!modalDataValido() || !coordenadasValidas()"
+          (click)="procesarGuardadoAreaInfluenciaModal()"
+        >
+          💾 Grabar Área de Influencia
+        </button>
+      </footer>
+    </div>
+  </div>
+}
