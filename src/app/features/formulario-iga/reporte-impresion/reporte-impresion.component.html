@@ -1,0 +1,62 @@
+<section class="reporte-impresion" appSoloLectura aria-label="Informe consolidado del expediente">
+  @if (expediente(); as expediente) {
+    <header class="reporte-cabecera">
+      <p class="reporte-gobierno">
+        Ministerio de Energía y Minas · Dirección General de Asuntos Ambientales Mineros
+      </p>
+      <h1 class="reporte-titulo">Expediente Consolidado del IGA</h1>
+
+      <dl class="reporte-metadatos">
+        <div class="reporte-metadato">
+          <dt>N° de Expediente</dt>
+          <dd>{{ expediente.numeroExpediente }}</dd>
+        </div>
+        <div class="reporte-metadato">
+          <dt>Proyecto</dt>
+          <dd>{{ expediente.nombreProyecto }}</dd>
+        </div>
+        <div class="reporte-metadato">
+          <dt>Unidad Minera</dt>
+          <dd>{{ expediente.unidadMinera }}</dd>
+        </div>
+        <div class="reporte-metadato">
+          <dt>Tipo de IGA</dt>
+          <dd>{{ expediente.tipoIga }}</dd>
+        </div>
+        <div class="reporte-metadato">
+          <dt>Titular</dt>
+          <dd>{{ store.razonSocial() }}</dd>
+        </div>
+        <div class="reporte-metadato">
+          <dt>Vigencia</dt>
+          <dd>{{ expediente.vigencia }}</dd>
+        </div>
+        <div class="reporte-metadato">
+          <dt>Fecha de envío</dt>
+          <dd>{{ expediente.fechaEnvio ?? 'No enviado' }}</dd>
+        </div>
+      </dl>
+    </header>
+
+    @for (capitulo of capitulosReporte(); track capitulo.numero) {
+      <section class="reporte-capitulo" aria-label="Capítulo {{ capitulo.numero }}">
+        <h2 class="reporte-capitulo-titulo">
+          <span [class]="claseSemaforo(capitulo.estado)" aria-hidden="true"></span>
+          {{ capitulo.numero }} · {{ capitulo.titulo }}
+        </h2>
+
+        @for (seccion of capitulo.secciones; track seccion.numero) {
+          <article class="reporte-seccion" [id]="'reporte-seccion-' + seccion.numero">
+            <h3 class="reporte-seccion-titulo">
+              <span [class]="claseSemaforo(seccion.estado)" aria-hidden="true"></span>
+              Sección {{ seccion.numero }} · {{ seccion.titulo }}
+            </h3>
+            <ng-container
+              *ngComponentOutlet="seccion.componenteRef; inputs: { numero: seccion.numero }"
+            />
+          </article>
+        }
+      </section>
+    }
+  }
+</section>

@@ -1,0 +1,113 @@
+@reference "../../../../styles.css";
+
+:host {
+  display: none;
+}
+
+/* --------------------------------------------------------------------
+   INFORME CONSOLIDADO DE IMPRESIÓN
+   Se monta oculto en pantalla solo mientras el titular descarga el PDF; el
+   `@media print` lo expone en el momento de imprimir y el workspace oculta
+   la consola de trámite con sus propias reglas.
+   ------------------------------------------------------------------ */
+
+.reporte-impresion {
+  @apply bg-white p-10 font-sans text-slate-900;
+}
+
+.reporte-gobierno {
+  @apply text-[11px] font-bold tracking-[0.18em] text-slate-500 uppercase;
+}
+
+.reporte-titulo {
+  @apply mt-2 text-2xl font-black tracking-tight text-slate-900;
+}
+
+.reporte-metadatos {
+  @apply mt-6 grid grid-cols-3 gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4;
+}
+
+.reporte-metadato dt {
+  @apply text-[10px] font-bold tracking-widest text-slate-400 uppercase;
+}
+
+.reporte-metadato dd {
+  @apply mt-1 text-sm font-semibold text-slate-800;
+}
+
+.reporte-capitulo {
+  @apply mt-10;
+}
+
+.reporte-capitulo-titulo {
+  @apply flex items-center gap-2 border-b-2 border-amber-500 pb-2 text-lg font-black text-slate-900;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+.reporte-seccion {
+  @apply mt-6;
+}
+
+.reporte-seccion-titulo {
+  @apply flex items-center gap-2 text-sm font-bold text-slate-700;
+  margin-bottom: 0.5rem;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+.reporte-semaforo {
+  @apply inline-block h-3 w-3 rounded-full;
+}
+
+.reporte-semaforo--verde {
+  background-color: #10b981;
+}
+
+.reporte-semaforo--azul {
+  background-color: #3b82f6;
+}
+
+.reporte-semaforo--rojo {
+  background-color: #ef4444;
+}
+
+.reporte-semaforo--gris {
+  background-color: #94a3b8;
+}
+
+.reporte-seccion-titulo .reporte-semaforo {
+  @apply h-2.5 w-2.5;
+}
+
+@media print {
+  :host {
+    display: block;
+  }
+
+  ::ng-deep body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  ::ng-deep tr,
+  ::ng-deep .tarjeta {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Las matrices y tablas con scroll interno se despliegan sin recorte. */
+  ::ng-deep .contenedor-tabla-vertices,
+  ::ng-deep .overflow-y-auto {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .reporte-impresion {
+    padding: 0;
+  }
+}

@@ -1,4 +1,4 @@
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
 import { WorkspaceComponent } from './workspace.component';
 import { DaexStore } from '../../state/daex.store';
@@ -16,7 +16,12 @@ describe('WorkspaceComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [WorkspaceComponent],
-      providers: [provideRouter([{ path: 'login', children: [] }])],
+      providers: [
+        provideRouter([
+          { path: 'formulario-iga', children: [] },
+          { path: 'login', children: [] },
+        ]),
+      ],
     }).compileComponents();
   });
 
@@ -158,6 +163,82 @@ describe('WorkspaceComponent', () => {
       expect(aprobado?.textContent).toContain('💬 Comunicaciones');
       expect(aprobado?.textContent).toContain('🔄 Modificación');
       expect(aprobado?.textContent).not.toContain('✏️ Editar');
+    });
+  });
+
+  describe('Consulta en modo solo lectura', () => {
+    /** Pulsa el botón Consultar de la fila del expediente aprobado de referencia. */
+    function abrirConsulta(raiz: HTMLElement): HTMLButtonElement {
+      const filas = Array.from(
+        elemento<HTMLTableElement>(raiz, 'table').querySelectorAll('tbody tr'),
+      );
+      const aprobado = filas.find((fila) =>
+        fila.textContent?.includes('Recuperación Pampa Blanca'),
+      );
+      expect(aprobado).toBeDefined();
+
+      const boton = Array.from(aprobado!.querySelectorAll<HTMLButtonElement>('button')).find(
+        (candidato) => candidato.textContent?.includes('Consultar'),
+      );
+      expect(boton).toBeDefined();
+      return boton!;
+    }
+
+    it('arranca con el candado apagado en el estado global', async () => {
+      const { store } = await montar();
+
+      expect(store.modoSoloConsulta()).toBe(false);
+    });
+
+    it('enciende el candado de solo lectura y navega al formulario con ref y modo', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      abrirConsulta(raiz).click();
+      await fixture.whenStable();
+
+      expect(store.modoSoloConsulta()).toBe(true);
+      const router = TestBed.inject(Router);
+      expect(router.url).toContain('/formulario-iga');
+      expect(router.url).toContain('ref=EXP-005');
+      expect(router.url).toContain('modo=CONSULTA');
+      // La cabecera del formulario carga el expediente de referencia y no un
+      // borrador ajeno.
+      expect(store.formulario().numeroExpediente).toBe('MINEM-2025-08811');
+    });
+
+    it('el switch reactivo del store apaga y enciende el candado', async () => {
+      const { store } = await montar();
+
+      store.activarModoSoloConsulta(true);
+      expect(store.modoSoloConsulta()).toBe(true);
+      store.activarModoSoloConsulta(false);
+      expect(store.modoSoloConsulta()).toBe(false);
+    });
+
+    it('Editar apaga el candado y navega con ref y modo=EDICION', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2026-03745' });
+      fixture.detectChanges();
+
+      const filas = Array.from(
+        elemento<HTMLTableElement>(raiz, 'table').querySelectorAll('tbody tr'),
+      );
+      const borrador = filas.find((fila) => fila.textContent?.includes('Exploración Pampa Blanca'));
+      expect(borrador).toBeDefined();
+      const editar = Array.from(borrador!.querySelectorAll<HTMLButtonElement>('button')).find(
+        (boton) => boton.textContent?.includes('Editar'),
+      );
+      editar?.click();
+      await fixture.whenStable();
+
+      expect(store.modoSoloConsulta()).toBe(false);
+      const router = TestBed.inject(Router);
+      expect(router.url).toContain('/formulario-iga');
+      expect(router.url).toContain('ref=EXP-007');
+      expect(router.url).toContain('modo=EDICION');
+      expect(store.formulario().numeroExpediente).toBe('MINEM-2026-03745');
     });
   });
 
@@ -357,6 +438,402 @@ describe('WorkspaceComponent', () => {
 
       crearObjectURL.mockRestore();
       revocar.mockRestore();
+    });
+  });
+
+  /* ------------------------------------------------------------------
+     ESTRATEGIA DE MODIFICACIÓN · Bifurcación IGA / ITS
+     ------------------------------------------------------------------
+     El botón «Modificación» de una solicitud ya enviada abre un popup que
+     discrimina entre la re-evaluación significativa (reabre el formulario
+     IGA) y el trámite derivado ITS (nuevo expediente Borrador en la bandeja).
+     ------------------------------------------------------------------ */
+  describe('Estrategia de modificación: bifurcación IGA / ITS', () => {
+    /** Abre el popup desde la fila del expediente aprobado de referencia. */
+    function abrirModificacion(raiz: HTMLElement): HTMLButtonElement {
+      const filas = Array.from(
+        elemento<HTMLTableElement>(raiz, 'table').querySelectorAll('tbody tr'),
+      );
+      const aprobado = filas.find((fila) =>
+        fila.textContent?.includes('Recuperación Pampa Blanca'),
+      );
+      expect(aprobado).toBeDefined();
+
+      const boton = Array.from(aprobado!.querySelectorAll<HTMLButtonElement>('button')).find(
+        (candidato) => candidato.textContent?.includes('Modificación'),
+      );
+      expect(boton).toBeDefined();
+      return boton!;
+    }
+
+    /** Encuentra un botón del popup por su texto. */
+    function opcionDelPopup(dialogo: HTMLElement, texto: string): HTMLButtonElement {
+      const encontrado = Array.from(dialogo.querySelectorAll<HTMLButtonElement>('button')).find(
+        (candidato) => candidato.textContent?.includes(texto),
+      );
+      expect(encontrado).toBeDefined();
+      return encontrado!;
+    }
+
+    it('levanta el popup al pulsar Modificación en una solicitud ya enviada', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      abrirModificacion(raiz).click();
+      fixture.detectChanges();
+
+      const dialogo = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      expect(dialogo.getAttribute('aria-modal')).toBe('true');
+      expect(dialogo.textContent).toContain('Estrategia de Modificación del IGA');
+      expect(dialogo.textContent).toContain('Expediente de Referencia: MINEM-2025-08811');
+      expect(dialogo.textContent).toContain('Modificación Significativa');
+      expect(dialogo.textContent).toContain('Modificación No Significativa');
+    });
+
+    it('la modificación significativa reabre el formulario IGA sobre el expediente', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      abrirModificacion(raiz).click();
+      fixture.detectChanges();
+      const dialogo = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      opcionDelPopup(dialogo, 'Modificación Significativa').click();
+      await fixture.whenStable();
+
+      const router = TestBed.inject(Router);
+      expect(router.url).toContain('/formulario-iga');
+      expect(router.url).toContain('ref=MINEM-2025-08811');
+      expect(router.url).toContain('tipo=SIGNIFICATIVA');
+      expect(router.url).toContain('modo=EDICION');
+      // La cabecera del formulario no debe heredar un borrador ajeno.
+      expect(store.formulario().numeroExpediente).toBe('MINEM-2025-08811');
+      // Reabrir para modificar es edición plena: candado apagado.
+      expect(store.modoSoloConsulta()).toBe(false);
+    });
+
+    it('la opción ITS revela la alerta técnica y confirma la apertura del derivado', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      abrirModificacion(raiz).click();
+      fixture.detectChanges();
+      const dialogo = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      const totalPrevio = store.expedientes().length;
+
+      opcionDelPopup(dialogo, 'No Significativa').click();
+      fixture.detectChanges();
+      expect(dialogo.textContent).toContain('creará y aperturará un nuevo expediente tipo ITS');
+
+      opcionDelPopup(dialogo, 'Confirmar Creación de ITS').click();
+      fixture.detectChanges();
+
+      expect(raiz.querySelector('[role="dialog"]')).toBeNull();
+      expect(store.expedientes().length).toBe(totalPrevio + 1);
+      const derivado = store.expedientes().at(-1);
+      expect(derivado?.tipoIga).toBe('ITS');
+      expect(derivado?.estado).toBe('Borrador');
+      expect(derivado?.numeroExpediente).toMatch(/^ITS-\d{4}-\d{3}$/);
+
+      // El aviso da visibilidad al hito recién creado dentro de la vista.
+      const aviso = elemento<HTMLElement>(raiz, '.aviso-its');
+      expect(aviso.textContent).toContain(derivado?.numeroExpediente);
+      expect(aviso.textContent).toContain('MINEM-2025-08811');
+    });
+
+    it('reabre el popup con la alerta de ITS colapsada y cierra sin rastro', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      abrirModificacion(raiz).click();
+      fixture.detectChanges();
+      const dialogo = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      opcionDelPopup(dialogo, 'No Significativa').click();
+      fixture.detectChanges();
+      expect(dialogo.textContent).toContain('creará y aperturará un nuevo expediente tipo ITS');
+
+      opcionDelPopup(dialogo, 'Cerrar').click();
+      fixture.detectChanges();
+      expect(raiz.querySelector('[role="dialog"]')).toBeNull();
+
+      // Reabrir vuelve a arrancar con la alerta colapsada.
+      abrirModificacion(raiz).click();
+      fixture.detectChanges();
+      const reabierto = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      expect(reabierto.textContent).toContain('Expediente de Referencia: MINEM-2025-08811');
+      expect(reabierto.textContent).not.toContain('creará y aperturará');
+    });
+  });
+
+  /* ------------------------------------------------------------------
+     CATÁLOGO DE COMUNICACIONES Y OBLIGACIONES POSTERIORES
+     ------------------------------------------------------------------
+     El botón «Comunicaciones» de una solicitud ya enviada abre el catálogo
+     maestro filtrado por el estado aprobado. La matriz ID_NOTA / Descripción
+     / Artículo es de solo lectura; el único control es su buscador interno.
+     ------------------------------------------------------------------ */
+  describe('Catálogo de comunicaciones posteriores', () => {
+    /** Abre el catálogo desde la fila del expediente aprobado de referencia. */
+    function abrirComunicaciones(raiz: HTMLElement): HTMLButtonElement {
+      const filas = Array.from(
+        elemento<HTMLTableElement>(raiz, 'table').querySelectorAll('tbody tr'),
+      );
+      const aprobado = filas.find((fila) =>
+        fila.textContent?.includes('Recuperación Pampa Blanca'),
+      );
+      expect(aprobado).toBeDefined();
+
+      const boton = Array.from(aprobado!.querySelectorAll<HTMLButtonElement>('button')).find(
+        (candidato) => candidato.textContent?.includes('Comunicaciones'),
+      );
+      expect(boton).toBeDefined();
+      return boton!;
+    }
+
+    it('abre el catálogo con la maestra completa y sin campos editables', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      abrirComunicaciones(raiz).click();
+      fixture.detectChanges();
+
+      const dialogo = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      expect(dialogo.getAttribute('aria-modal')).toBe('true');
+      expect(dialogo.textContent).toContain('Comunicaciones y Obligaciones Posteriores');
+      expect(dialogo.textContent).toContain('Expediente Origen: MINEM-2025-08811');
+      // Alerta obligatoria del filtrado por estado de la solicitud de referencia.
+      expect(dialogo.textContent).toContain('filtrado automáticamente');
+      expect(dialogo.textContent).toContain('"APROBADO"');
+      // Fila representativa de la maestra legal.
+      expect(dialogo.textContent).toContain('Comunicación de Cierre Final de Actividades');
+      expect(dialogo.textContent).toContain('41°');
+
+      // Las 21 notas de la maestra; la matriz no admite edición en línea.
+      const filas = Array.from(dialogo.querySelectorAll('tbody tr'));
+      expect(filas.length).toBe(21);
+      expect(dialogo.querySelector('table input')).toBeNull();
+    });
+
+    it('filtra el catálogo por descripción y por articulado en tiempo real', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+      abrirComunicaciones(raiz).click();
+      fixture.detectChanges();
+
+      const dialogo = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      const campo = elemento<HTMLInputElement>(dialogo, 'input');
+      campo.value = 'cierre';
+      campo.dispatchEvent(new Event('input', { bubbles: true }));
+      fixture.detectChanges();
+
+      const porDescripcion = Array.from(dialogo.querySelectorAll('tbody tr'));
+      expect(porDescripcion.length).toBe(2);
+      expect(dialogo.textContent).toContain('Comunicación de Cierre Final de Actividades');
+      expect(dialogo.textContent).toContain('Excepción del Cierre Final');
+
+      campo.value = '136°';
+      campo.dispatchEvent(new Event('input', { bubbles: true }));
+      fixture.detectChanges();
+
+      const porArticulo = Array.from(dialogo.querySelectorAll('tbody tr'));
+      expect(porArticulo.length).toBe(1);
+      expect(dialogo.textContent).toContain('Ampliación de Plazo de Observaciones');
+    });
+
+    it('inicia un trámite derivado y lo reafirma con un aviso dentro de la vista', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+      abrirComunicaciones(raiz).click();
+      fixture.detectChanges();
+
+      const dialogo = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      elemento<HTMLButtonElement>(dialogo, 'tbody tr button').click();
+      fixture.detectChanges();
+
+      expect(raiz.querySelector('[role="dialog"]')).toBeNull();
+      const aviso = elemento<HTMLElement>(raiz, '.aviso-comunicacion');
+      expect(aviso.textContent).toContain('Obligación Posterior N° 1.00');
+      expect(aviso.textContent).toContain('Comunicación de Responsabilidad del Titular');
+      expect(aviso.textContent).toContain('MINEM-2025-08811');
+    });
+
+    it('cierra el catálogo con el botón de pie sin abrir ningún trámite', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+      abrirComunicaciones(raiz).click();
+      fixture.detectChanges();
+
+      const dialogo = elemento<HTMLElement>(raiz, '[role="dialog"]');
+      const cerrar = Array.from(dialogo.querySelectorAll<HTMLButtonElement>('button')).find(
+        (boton) => boton.textContent?.includes('Cerrar Catálogo'),
+      );
+      expect(cerrar).toBeDefined();
+      cerrar?.click();
+      fixture.detectChanges();
+
+      expect(raiz.querySelector('[role="dialog"]')).toBeNull();
+      expect(raiz.querySelector('.aviso-comunicacion')).toBeNull();
+    });
+  });
+
+  describe('Descarga del expediente consolidado en PDF', () => {
+    /** Pulsa el botón Imprimir de la fila del expediente aprobado de referencia. */
+    function botonImprimir(raiz: HTMLElement): HTMLButtonElement {
+      const filas = Array.from(
+        elemento<HTMLTableElement>(raiz, 'table').querySelectorAll('tbody tr'),
+      );
+      const aprobado = filas.find((fila) =>
+        fila.textContent?.includes('Recuperación Pampa Blanca'),
+      );
+      expect(aprobado).toBeDefined();
+
+      const boton = Array.from(aprobado!.querySelectorAll<HTMLButtonElement>('button')).find(
+        (candidato) => candidato.textContent?.includes('Imprimir'),
+      );
+      expect(boton).toBeDefined();
+      return boton!;
+    }
+
+    /**
+     * Pulsa Imprimir y espera la tarea que `imprimir()` programa antes del
+     * diálogo: el informe queda montado una macrotarea después del clic.
+     */
+    async function pulsarImpresion(raiz: HTMLElement): Promise<void> {
+      botonImprimir(raiz).click();
+      await new Promise((resolver) => setTimeout(resolver, 0));
+    }
+
+    it('monta el informe consolidado con las 26 fichas visibles de los siete capítulos', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      const original = window.print;
+      window.print = () => void 0;
+      try {
+        await pulsarImpresion(raiz);
+        fixture.detectChanges();
+      } finally {
+        window.print = original;
+      }
+
+      const informe = elemento<HTMLElement>(raiz, 'app-reporte-impresion');
+      expect(informe.textContent).toContain('Expediente Consolidado del IGA');
+      expect(informe.textContent).toContain('MINEM-2025-08811');
+      expect(informe.textContent).toContain('Recuperación Pampa Blanca');
+      expect(informe.textContent).toContain('AISD');
+      expect(informe.querySelectorAll('.reporte-capitulo').length).toBe(7);
+      expect(informe.querySelectorAll('.reporte-seccion').length).toBe(26);
+      // Las sub-capas 5.2.1 y 5.2.2 quedan absorbidas por la 5.2.
+      expect(informe.ownerDocument?.getElementById('reporte-seccion-5.2.1')).toBeNull();
+      expect(informe.ownerDocument?.getElementById('reporte-seccion-5.2.2')).toBeNull();
+    });
+
+    it('apila cada sección con su encabezado oficial y su ficha proyectada', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      const original = window.print;
+      window.print = () => void 0;
+      try {
+        await pulsarImpresion(raiz);
+        fixture.detectChanges();
+      } finally {
+        window.print = original;
+      }
+
+      const informe = elemento<HTMLElement>(raiz, 'app-reporte-impresion');
+      const secciones = Array.from(informe.querySelectorAll<HTMLElement>('.reporte-seccion'));
+
+      expect(secciones.length).toBeGreaterThan(0);
+      for (const seccion of secciones) {
+        expect(seccion.querySelector('h3')?.textContent?.trim().length).toBeGreaterThan(0);
+        expect(seccion.textContent?.trim().length).toBeGreaterThan(0);
+      }
+      expect(informe.textContent).toContain('Sección 1.1 ·');
+      expect(informe.textContent).toContain('Sección 2.5 ·');
+      expect(informe.textContent).toContain('Sección 7.1 ·');
+    });
+
+    it('dispara el diálogo nativo y desmonta el informe cuando termina la impresión', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      const imprimir = vi.fn();
+      const original = window.print;
+      window.print = imprimir;
+      try {
+        await pulsarImpresion(raiz);
+        fixture.detectChanges();
+
+        expect(imprimir).toHaveBeenCalledTimes(1);
+        expect(raiz.querySelector('app-reporte-impresion')).not.toBeNull();
+
+        // Al imprimir o cancelar, el navegador emite `afterprint` y el informe
+        // se desmonta para no dejar 26 fichas vivas en el fondo de la consola.
+        window.dispatchEvent(new Event('afterprint'));
+        fixture.detectChanges();
+        expect(raiz.querySelector('app-reporte-impresion')).toBeNull();
+      } finally {
+        window.print = original;
+      }
+    });
+
+    it('enciende el candado de solo lectura mientras se imprime', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      const original = window.print;
+      window.print = () => void 0;
+      try {
+        await pulsarImpresion(raiz);
+        fixture.detectChanges();
+
+        expect(store.modoSoloConsulta()).toBe(true);
+      } finally {
+        window.print = original;
+      }
+    });
+
+    it('deja el informe y sus fichas en candado de solo lectura', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.filtrar({ numeroExpediente: 'MINEM-2025-08811' });
+      fixture.detectChanges();
+
+      const original = window.print;
+      window.print = () => void 0;
+      try {
+        await pulsarImpresion(raiz);
+        fixture.detectChanges();
+
+        const informe = elemento<HTMLElement>(raiz, 'app-reporte-impresion');
+        const seccionReporte = elemento<HTMLElement>(informe, '.reporte-impresion');
+        expect(seccionReporte.classList.contains('modo-lectura')).toBe(true);
+
+        const botones = Array.from(seccionReporte.querySelectorAll<HTMLButtonElement>('button'));
+        expect(botones.length).toBeGreaterThan(0);
+        for (const boton of botones) {
+          expect(boton.hidden).toBe(true);
+        }
+
+        for (const control of Array.from(
+          seccionReporte.querySelectorAll<HTMLInputElement>('input, select, textarea'),
+        )) {
+          expect(control.disabled).toBe(true);
+        }
+      } finally {
+        window.print = original;
+      }
     });
   });
 });

@@ -3,7 +3,7 @@
 /* --------------------------------------------------------------------
    LAYOUT · Columna flexible a pantalla completa
 
-   La raíz es `h-screen ... overflow-hidden` y el cuerpo usa `flex-1`, de
+   La raíz es `h-dvh ... overflow-hidden` y el cuerpo usa `flex-1`, de
    modo que el reparto de altura entre el `<aside>` y el `<main>` lo resuelve
    el flexbox y no una altura fija. La clase base del `<aside>` solo declara
    la transición: el fondo blanco, el borde y el alto viven en la plantilla

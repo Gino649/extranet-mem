@@ -1,4 +1,12 @@
-import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import {
   DaexStore,
@@ -9,6 +17,7 @@ import {
   type TipoIga,
 } from '../../state/daex.store';
 import { esVentanaEstrecha } from '../../utilidades/ventana';
+import { ReporteImpresionComponent } from '../formulario-iga/reporte-impresion/reporte-impresion.component';
 
 /**
  * Vistas de la bandeja general.
@@ -34,12 +43,94 @@ interface NotificacionDecorada extends Notificacion {
 /** Margen de página del PDF de acuse, en puntos. */
 const MARGEN_PDF = 56;
 
+/**
+ * Fila del catálogo maestro de comunicaciones y obligaciones posteriores.
+ *
+ * Extraída de la hoja de cálculo de la maestra legal: cada fila identifica la
+ * obligación con un `idNota` correlativo, su glosa y el articulado que la
+ * ampara. Es catálogo cerrado, por eso viaja como constante y no como signal.
+ */
+interface NotaComunicacionPosterior {
+  readonly idNota: number;
+  readonly descripcion: string;
+  readonly articulo: string;
+}
+
+const MAESTRO_NOTAS_COMUNICACIONES: readonly NotaComunicacionPosterior[] = [
+  {
+    idNota: 1,
+    descripcion: 'Comunicación de Responsabilidad del Titular',
+    articulo: 'Artículo 16° y 22° D.S. N° 040-2014-EM',
+  },
+  { idNota: 2, descripcion: 'Comunicación de Inicio de Actividades', articulo: '17°' },
+  {
+    idNota: 3,
+    descripcion: 'Comunicación de obstaculización de actividad de exploración',
+    articulo: '18°',
+  },
+  {
+    idNota: 4,
+    descripcion: 'Modificación del plazo de Ejecución (no mayor de 6 meses)',
+    articulo: '26°',
+  },
+  { idNota: 5, descripcion: 'Modificación del alcance de la DIA aprobada', articulo: '33°' },
+  { idNota: 6, descripcion: 'Comunicación de Cierre Final de Actividades', articulo: '41°' },
+  { idNota: 7, descripcion: 'Transito hacia la exploración', articulo: '42°' },
+  { idNota: 8, descripcion: 'Comunicación de MOdificación de EIASD', articulo: '36.2°' },
+  {
+    idNota: 13,
+    descripcion: 'Comunicación de variaciones no significativas a la clasificación',
+    articulo: 'Artículo 45° D.S. N° 019-2009-MINAM',
+  },
+  {
+    idNota: 14,
+    descripcion: 'Comunicación de mecanismo de participación ciudadana antes',
+    articulo: 'Artículo 4° R.M. N° 092-2014-MEM/DM',
+  },
+  {
+    idNota: 9,
+    descripcion: 'Comunicación de Ampliación de Plazo de Observaciones',
+    articulo: '136°',
+  },
+  {
+    idNota: 11,
+    descripcion: 'Plan de Participación Ciudadana',
+    articulo: 'Artículo 29°, literal d) DS N° 040-2014-EM',
+  },
+  {
+    idNota: 12,
+    descripcion: 'Comunicación de Inicio de Elaboración de Estudio Ambiental',
+    articulo: 'Artículo 29°, literal b) DS N° 040-2014-EM',
+  },
+  { idNota: 19, descripcion: 'Comunicación de Informacion Complementaria', articulo: 'otros' },
+  {
+    idNota: 20,
+    descripcion: 'Comunicación de reubicación de componentes de exploración',
+    articulo: 'otras comunicaciones',
+  },
+  {
+    idNota: 21,
+    descripcion: 'Comunicación de suspención de actividades de exploracion',
+    articulo: 'otras comunicaciones',
+  },
+  {
+    idNota: 22,
+    descripcion: 'Comunicación de Excepción del Cierre Final y/o Transferencia de',
+    articulo: 'otras comunicaciones',
+  },
+  { idNota: 15, descripcion: 'INFORME SEMESTRAL DEL SEMESTRE_1', articulo: 'PCM' },
+  { idNota: 16, descripcion: 'INFORME SEMESTRAL DEL SEMESTRE_2', articulo: 'PCM' },
+  { idNota: 17, descripcion: 'GARANTIA ANUAL', articulo: 'PCM' },
+  { idNota: 18, descripcion: 'OTROS', articulo: 'PCM' },
+];
+
 @Component({
   selector: 'app-workspace',
+  imports: [ReporteImpresionComponent],
   templateUrl: './workspace.component.html',
   styleUrls: ['./workspace.component.css'],
 })
-export class WorkspaceComponent {
+export class WorkspaceComponent implements OnDestroy {
   protected readonly store = inject(DaexStore);
   private readonly router = inject(Router);
   private readonly panelModal = viewChild<ElementRef<HTMLElement>>('panelModal');
@@ -62,6 +153,53 @@ export class WorkspaceComponent {
 
   /** Visibilidad del modal esmerilado de selección de IGA. */
   protected readonly modalAbierto = signal(false);
+
+  /** Visibilidad del popup de estrategia de modificación (bifurcación IGA / ITS). */
+  protected readonly modalModificacionAbierto = signal(false);
+
+  /** Alerta técnica de ITS visible dentro del popup de modificación. */
+  protected readonly mostrarAlertaIts = signal(false);
+
+  /**
+   * Cierra el informe de impresión una vez que el navegador termina de
+   * componer el PDF. Desmontarlo evita mantener 26 fichas vivas en el fondo
+   * del workspace después de imprimir o cancelar el diálogo.
+   */
+  private readonly cerrarInformePorImpresionTerminada = (): void => {
+    this.reporteAbierto.set(false);
+  };
+
+  constructor() {
+    window.addEventListener('afterprint', this.cerrarInformePorImpresionTerminada);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('afterprint', this.cerrarInformePorImpresionTerminada);
+  }
+
+  /** Expediente de referencia cuyo IGA se va a modificar. */
+  protected readonly expedienteIdEnModificacion = signal('');
+
+  /** Aviso que resume la apertura del ITS derivado, descartable por el titular. */
+  protected readonly avisoItsCreado = signal<string | null>(null);
+
+  /** Visibilidad del popup del catálogo de comunicaciones posteriores. */
+  protected readonly modalComunicacionesAbierto = signal(false);
+
+  /** Expediente de referencia cuyo ciclo de vida se está consultando. */
+  protected readonly expedienteActivoId = signal('');
+
+  /** Texto del buscador interno del catálogo de comunicaciones. */
+  protected readonly busquedaFiltroNota = signal('');
+
+  /** Aviso que confirma la apertura de un trámite derivado de obligación posterior. */
+  protected readonly avisoComunicacionCreado = signal<string | null>(null);
+
+  /** Expediente cuyo informe consolidado se está descargando. */
+  protected readonly expedienteParaImprimir = signal<Expediente | null>(null);
+
+  /** Presencia del informe de impresión en el DOM (oculto hasta `@media print`). */
+  protected readonly reporteAbierto = signal(false);
 
   /** Instrumento elegido en el modal antes de iniciar el registro. */
   protected readonly igaSeleccionada = signal<TipoIga | null>(null);
@@ -135,6 +273,24 @@ export class WorkspaceComponent {
     this.igaSeleccionada() ? 'boton-oro' : 'boton-tenue cursor-not-allowed',
   );
 
+  /**
+   * Motor de búsqueda reactivo del catálogo de comunicaciones.
+   * Filtra las filas de la maestra según coincida con la glosa de la
+   * descripción, con el articulado legal o con el propio `idNota`.
+   */
+  protected readonly catalogoNotasFiltrado = computed(() => {
+    const texto = this.busquedaFiltroNota().trim().toLowerCase();
+    if (!texto) {
+      return MAESTRO_NOTAS_COMUNICACIONES;
+    }
+    return MAESTRO_NOTAS_COMUNICACIONES.filter(
+      (nota) =>
+        nota.descripcion.toLowerCase().includes(texto) ||
+        nota.articulo.toLowerCase().includes(texto) ||
+        nota.idNota.toString().includes(texto),
+    );
+  });
+
   // -----------------------------------------------------------------
   // NAVEGACIÓN Y VISTAS
   // -----------------------------------------------------------------
@@ -203,25 +359,183 @@ export class WorkspaceComponent {
   // ACCIONES DE FILA
   // -----------------------------------------------------------------
 
-  protected consultar(expediente: Expediente): void {
-    this.puntoDeIntegracion('Consultar', expediente.numeroExpediente);
+  /**
+   * DETONADOR DE MODO LECTURA PROTEGIDO
+   * Abre el formulario IGA bloqueando de forma radical la inserción, edición y
+   * eliminación de datos.
+   *
+   * Primero se carga el contexto del expediente en el store —igual que lo hace
+   * `editar`— para que la cabecera del formulario no herede un borrador ajeno;
+   * luego se enciende el candado de solo lectura y se navega pasando la
+   * referencia y el modo por la URL, que el formulario consumirá más adelante.
+   */
+  protected ingresarAFormularioModoConsulta(expedienteId: string): void {
+    const origen = this.store
+      .expedientes()
+      .find(
+        (expediente) =>
+          expediente.id === expedienteId || expediente.numeroExpediente === expedienteId,
+      );
+    if (origen) {
+      this.store.editarExpediente(origen);
+    }
+
+    // 1. Encender el candado de solo lectura en el Store Central.
+    this.store.activarModoSoloConsulta(true);
+
+    // 2. Redirigir al formulario-iga pasando el id del expediente en los
+    //    parámetros de ruta.
+    void this.router.navigate(['/formulario-iga'], {
+      queryParams: { ref: expedienteId, modo: 'CONSULTA' },
+    });
   }
 
   protected editar(expediente: Expediente): void {
     this.store.editarExpediente(expediente);
-    void this.router.navigate(['/formulario-iga']);
+    // La edición requiere el candado apagado: el modo viaja en la URL y la
+    // bandera del store queda sincronizada con él desde la propia bandeja.
+    this.store.activarModoSoloConsulta(false);
+    void this.router.navigate(['/formulario-iga'], {
+      queryParams: { ref: expediente.id, modo: 'EDICION' },
+    });
   }
 
+  /**
+   * Descarga del expediente consolidado en PDF.
+   *
+   * Monta el informe oculto (todas las fichas de los siete capítulos en un solo
+   * documento) y abre el diálogo nativo de impresión una tarea después, cuando
+   * Angular ya haya proyectado el `NgComponentOutlet` de cada sección. El
+   * navegador es quien exporta el PDF: "Guardar como PDF" o "Microsoft Print to
+   * PDF". Al terminar (imprimir o cancelar), `afterprint` desmonta el informe.
+   */
   protected imprimir(expediente: Expediente): void {
-    this.puntoDeIntegracion('Imprimir', expediente.numeroExpediente);
+    this.expedienteParaImprimir.set(expediente);
+    // La impresión es una captura de solo lectura: se enciende el mismo candado
+    // que consulta, aunque el PDF se genere sin navegar fuera del workspace.
+    this.store.activarModoSoloConsulta(true);
+    this.reporteAbierto.set(true);
+    setTimeout(() => window.print(), 0);
   }
 
   protected comunicaciones(expediente: Expediente): void {
-    this.puntoDeIntegracion('Comunicaciones', expediente.numeroExpediente);
+    this.abrirModalComunicacionesPosteriores(expediente.numeroExpediente);
   }
 
   protected modificacion(expediente: Expediente): void {
-    this.puntoDeIntegracion('Modificación', expediente.numeroExpediente);
+    this.abrirModalOpcionesModificacion(expediente.numeroExpediente);
+  }
+
+  // -----------------------------------------------------------------
+  // ESTRATEGIA DE MODIFICACIÓN · Bifurcación IGA / ITS
+  // -----------------------------------------------------------------
+
+  /**
+   * Abre el popup que discrimina entre modificación significativa y el
+   * trámite derivado ITS. La alerta de ITS arranca siempre colapsada para
+   * que la decisión se pueda corregir antes de confirmar.
+   */
+  protected abrirModalOpcionesModificacion(expedienteId: string): void {
+    this.expedienteIdEnModificacion.set(expedienteId);
+    this.mostrarAlertaIts.set(false);
+    this.modalModificacionAbierto.set(true);
+  }
+
+  protected cerrarModalModificacion(): void {
+    this.modalModificacionAbierto.set(false);
+    this.mostrarAlertaIts.set(false);
+    this.expedienteIdEnModificacion.set('');
+  }
+
+  /** Opción 2: el titular detalla, y se revela la notificación técnica del ITS. */
+  protected seleccionarOpcionItsNoSignificativa(): void {
+    this.mostrarAlertaIts.set(true);
+  }
+
+  /**
+   * Opción 1 (significativa): reabre el formulario IGA completo sobre el
+   * expediente de referencia. Se carga el contexto en el store antes de
+   * navegar para que la cabecera del formulario no herede un borrador ajeno.
+   */
+  protected irAlFormularioIgaModificacion(): void {
+    const referencia = this.expedienteIdEnModificacion();
+    const origen = this.store
+      .expedientes()
+      .find(
+        (expediente) => expediente.id === referencia || expediente.numeroExpediente === referencia,
+      );
+    if (origen) {
+      this.store.editarExpediente(origen);
+    }
+    // Reabrir para modificar es edición plena: candado apagado, igual que en el
+    // resto de rutas de escritura del formulario.
+    this.store.activarModoSoloConsulta(false);
+    this.cerrarModalModificacion();
+    void this.router.navigate(['/formulario-iga'], {
+      queryParams: { ref: referencia, tipo: 'SIGNIFICATIVA', modo: 'EDICION' },
+    });
+  }
+
+  /**
+   * Confirma el ITS: persiste el expediente derivado en la bandeja y cierra el
+   * popup. La grilla reacciona sola porque la lista del store es una signal;
+   * el aviso hace visible el hito recién creado.
+   */
+  protected confirmarAperturaExpedienteIts(): void {
+    const referencia = this.expedienteIdEnModificacion();
+    const derivado = this.store.abrirExpedienteItsDerivado(referencia);
+    if (derivado) {
+      this.avisoItsCreado.set(
+        `Se aperturó el ITS ${derivado.numeroExpediente} como hito derivado del IGA ${referencia}.`,
+      );
+    }
+    this.cerrarModalModificacion();
+  }
+
+  protected cerrarAvisoIts(): void {
+    this.avisoItsCreado.set(null);
+  }
+
+  // -----------------------------------------------------------------
+  // CATÁLOGO DE COMUNICACIONES Y OBLIGACIONES POSTERIORES
+  // -----------------------------------------------------------------
+
+  /** Abre el catálogo de control de trámites corrientes del expediente. */
+  protected abrirModalComunicacionesPosteriores(expedienteId: string): void {
+    this.expedienteActivoId.set(expedienteId);
+    this.busquedaFiltroNota.set('');
+    this.modalComunicacionesAbierto.set(true);
+  }
+
+  protected cerrarModalComunicaciones(): void {
+    this.modalComunicacionesAbierto.set(false);
+    this.expedienteActivoId.set('');
+  }
+
+  /** Conecta la caja de búsqueda del catálogo con su signal. */
+  protected buscarNota(evento: Event): void {
+    this.busquedaFiltroNota.set((evento.target as HTMLInputElement).value);
+  }
+
+  /**
+   * Levanta la sub-solicitud derivada de la obligación posterior elegida. Cierra
+   * el catálogo y deja visible un aviso que resume el trámite aperturado; la
+   * navegación al formulario específico de la comunicación llega en un paso
+   * posterior.
+   */
+  protected iniciarTramiteComunicacionDerivada(nota: NotaComunicacionPosterior): void {
+    const referencia = this.expedienteActivoId();
+    if (referencia) {
+      this.avisoComunicacionCreado.set(
+        `Se aperturó el trámite derivado de la Obligación Posterior ` +
+          `N° ${nota.idNota.toFixed(2)} — "${nota.descripcion}" para el expediente ${referencia}.`,
+      );
+    }
+    this.cerrarModalComunicaciones();
+  }
+
+  protected cerrarAvisoComunicacion(): void {
+    this.avisoComunicacionCreado.set(null);
   }
 
   // -----------------------------------------------------------------
@@ -251,7 +565,11 @@ export class WorkspaceComponent {
     }
     this.cerrarModal();
     this.store.iniciarFormularioNuevo(tipo);
-    void this.router.navigate(['/formulario-iga']);
+    // Un registro nuevo es una sesión de edición plena y así lo declara la ruta.
+    this.store.activarModoSoloConsulta(false);
+    void this.router.navigate(['/formulario-iga'], {
+      queryParams: { modo: 'EDICION' },
+    });
   }
 
   // -----------------------------------------------------------------

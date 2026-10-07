@@ -162,7 +162,7 @@
 }
 
 .modalo {
-  @apply flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-zoom-in;
+  @apply flex max-h-[92dvh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-zoom-in;
 }
 
 .modalo-cabecera {

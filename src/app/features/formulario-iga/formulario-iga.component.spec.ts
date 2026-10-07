@@ -492,7 +492,7 @@ describe('FormularioIgaComponent', () => {
       const aside = elemento<HTMLElement>(raiz, 'aside');
       const panel = elemento<HTMLElement>(raiz, 'main');
 
-      expect(raizContenedor.className).toContain('h-screen');
+      expect(raizContenedor.className).toContain('h-dvh');
       expect(raizContenedor.className).toContain('overflow-hidden');
       expect(aside.className).toContain('justify-between');
       expect(aside.className).toContain('overflow-y-auto');
@@ -510,7 +510,9 @@ describe('FormularioIgaComponent', () => {
        * era la fuente del recorte en laptop: `100vh` no descuenta la barra del
        * navegador ni las herramientas de desarrollo, así que la caja podía
        * medir más que su hueco y la raíz `overflow-hidden` cortaba el final del
-       * panel sin dejar scroll. `min-h-0` es lo que permite encolhejar.
+       * panel sin dejar scroll. `min-h-0` es lo que permite encolhejar. La raíz
+       * tampoco usa `100vh`: `h-dvh` es la única altura que sigue al área
+       * visible real y evita que la página agregue su propia barra de scroll.
        */
       for (const caja of [aside, panel]) {
         expect(caja.className).not.toContain('100vh');
@@ -559,6 +561,31 @@ describe('FormularioIgaComponent', () => {
       expect(menu.textContent).toContain('Expediente DAEX');
       expect(menu.textContent).toContain('Información General');
       expect(menu.textContent).not.toContain('Listado Solicitudes');
+    });
+  });
+
+  describe('Modo solo lectura (consulta e impresión)', () => {
+    it('oculta el envío ministerial y cuelga la clase guard en el panel', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.editarExpediente(store.expedientes()[0]!);
+      store.activarModoSoloConsulta(true);
+      fixture.detectChanges();
+
+      expect(raiz.querySelector('.boton-envio')).toBeNull();
+      expect(elemento<HTMLElement>(raiz, 'main').classList.contains('modo-lectura')).toBe(true);
+    });
+
+    it('devuelve el envío al apagar el candado', async () => {
+      const { fixture, store, raiz } = await montar();
+      store.activarModoSoloConsulta(true);
+      fixture.detectChanges();
+      expect(raiz.querySelector('.boton-envio')).toBeNull();
+
+      store.activarModoSoloConsulta(false);
+      fixture.detectChanges();
+
+      expect(elemento<HTMLButtonElement>(raiz, '.boton-envio')).toBeTruthy();
+      expect(elemento<HTMLElement>(raiz, 'main').classList.contains('modo-lectura')).toBe(false);
     });
   });
 

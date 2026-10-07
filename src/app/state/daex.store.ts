@@ -7,7 +7,7 @@ const LONGITUD_RUC = 11;
 export type EstadoTramite = 'Borrador' | 'En Revisión' | 'Observado' | 'Aprobado';
 
 /** Instrumento de Gestión Ambiental cubierto por la extranet. */
-export type TipoIga = 'DAEX' | 'AIAD' | 'AIAI' | 'AISD' | 'AISI';
+export type TipoIga = 'DAEX' | 'AIAD' | 'AIAI' | 'AISD' | 'AISI' | 'ITS';
 
 /** Un expediente registrado en la bandeja del titular minero. */
 export interface Expediente {
@@ -1078,7 +1078,7 @@ export class DaexStore {
     'Aprobado',
   ];
 
-  readonly tiposDisponibles: readonly TipoIga[] = ['DAEX', 'AIAD', 'AIAI', 'AISD', 'AISI'];
+  readonly tiposDisponibles: readonly TipoIga[] = ['DAEX', 'AIAD', 'AIAI', 'AISD', 'AISI', 'ITS'];
 
   /**
    * Filtrado en cliente. La búsqueda de expediente y proyecto es insensible a
@@ -2116,6 +2116,13 @@ export class DaexStore {
     return Math.round(((total - this.seccionesPendientes().length) / total) * 100);
   });
 
+  // Bandera maestra: determina si el usuario visualiza el expediente sin permisos de edición
+  public modoSoloConsulta = signal<boolean>(false);
+
+  public activarModoSoloConsulta(activo: boolean): void {
+    this.modoSoloConsulta.set(activo);
+  }
+
   /** Abre el formulario de edición sobre un expediente de la bandeja. */
   editarExpediente(expediente: Expediente): void {
     this.contextoFormulario.set({
@@ -2129,6 +2136,41 @@ export class DaexStore {
   /** Prepara el contexto de un DAEX nuevo, todavía sin expediente asignado. */
   iniciarFormularioNuevo(tipoIga: TipoIga = 'DAEX'): void {
     this.contextoFormulario.set({ ...CONTEXTO_NUEVO, tipoIga });
+  }
+
+  /**
+   * Abre un expediente derivado tipo ITS vinculado a un IGA aprobado.
+   *
+   * La bifurcación no toca el expediente origen: la modificación no
+   * significativa se tramita como hito independiente, en estado Borrador y
+   * listo para que el titular lo complete desde la bandeja. Devuelve `null`
+   * si el expediente de referencia no existe en el catálogo.
+   */
+  abrirExpedienteItsDerivado(expedienteOrigenId: string): Expediente | null {
+    const origen = this.listaExpedientes().find(
+      (expediente) =>
+        expediente.id === expedienteOrigenId || expediente.numeroExpediente === expedienteOrigenId,
+    );
+    if (!origen) {
+      return null;
+    }
+
+    const anio = new Date().getFullYear();
+    const correlativo = String(
+      this.listaExpedientes().filter((expediente) => expediente.tipoIga === 'ITS').length + 1,
+    ).padStart(3, '0');
+    const derivado: Expediente = {
+      id: `EXP-ITS-${anio}-${correlativo}`,
+      tipoIga: 'ITS',
+      nombreProyecto: origen.nombreProyecto,
+      unidadMinera: origen.unidadMinera,
+      numeroExpediente: `ITS-${anio}-${correlativo}`,
+      fechaEnvio: null,
+      vigencia: '—',
+      estado: 'Borrador',
+    };
+    this.listaExpedientes.update((expedientes) => [...expedientes, derivado]);
+    return derivado;
   }
 
   /**

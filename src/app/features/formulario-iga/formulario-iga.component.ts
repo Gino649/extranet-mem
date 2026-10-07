@@ -1,8 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
+
+import { SoloLecturaDirective } from '../../directivas/solo-lectura.directive';
 import { DaexStore, EstadoSeccion } from '../../state/daex.store';
 import { esVentanaEstrecha } from '../../utilidades/ventana';
-
 /**
  * Significado de cada color del semáforo.
  *
@@ -46,7 +47,7 @@ const RETARDO_TRANSMISION_MS = 3500;
  */
 @Component({
   selector: 'app-formulario-iga',
-  imports: [RouterLink, RouterOutlet],
+  imports: [RouterLink, RouterOutlet, SoloLecturaDirective],
   templateUrl: './formulario-iga.component.html',
   styleUrls: ['./formulario-iga.component.css'],
 })

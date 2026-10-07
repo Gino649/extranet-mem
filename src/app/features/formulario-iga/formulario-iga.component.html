@@ -1,4 +1,4 @@
-<div class="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-800">
+<div class="flex h-dvh flex-col overflow-hidden bg-slate-50 text-slate-800">
   <!-- ================================================================
        HEADER SUPERIOR FIJO · Metadatos inmutables del trámite
        ================================================================ -->
@@ -71,32 +71,33 @@
         botón está bloqueado: un tooltip que aparece para decir «puedes» molesta
         más de lo que informa.
       -->
-      <button
-        type="button"
-        class="boton-envio"
-        [class.boton-envio--bloqueado]="!puedeRemitir()"
-        [disabled]="!puedeRemitir()"
-        [attr.title]="motivoRemision()"
-        (click)="transmitirEstudioAlMinem()"
-      >
-        📨 {{ etiquetaRemision() }}
-      </button>
+      @if (!store.modoSoloConsulta()) {
+        <button
+          type="button"
+          class="boton-envio"
+          [class.boton-envio--bloqueado]="!puedeRemitir()"
+          [disabled]="!puedeRemitir()"
+          [attr.title]="motivoRemision()"
+          (click)="transmitirEstudioAlMinem()"
+        >
+          📨 {{ etiquetaRemision() }}
+        </button>
+      }
     </div>
   </header>
 
   <!-- ================================================================
        CUERPO · Índice de 7 capítulos + scroll del orquestador
 
-       El alto no se escribe en ninguna regla: la raíz es `h-screen
+       El alto no se escribe en ninguna regla: la raíz es `h-dvh
        overflow-hidden` y este contenedor es `flex-1 min-h-0`, de modo que el
-       reparto entre cabecera, cuerpo y pie lo resuelve el flexbox. Antes el
-       `<aside>` y el `<main>` declaraban además `h-[calc(100vh-8rem)]`, y esa
-       segunda medida era un problema: `100vh` no descuenta la barra del
-       navegador ni las herramientas de desarrollo acopladas, así que en una
-       laptop la caja podía medir más que el hueco disponible y la raíz
-       `overflow-hidden` recortaba el final del panel sin dejar scroll.
-       `min-h-0` es lo que permite que un hijo con `overflow` propio encolhaja
-       en vez de desbordar la raíz.
+       reparto entre cabecera, cuerpo y pie lo resuelve el flexbox. La raíz usa
+       `dvh` y no `100vh` para que siga al área visible real: `100vh` no
+       descuenta la barra del navegador ni las herramientas de desarrollo
+       acopladas, así que en una laptop la caja medía más que el hueco
+       disponible, la página ganaba una segunda barra de scroll y el fondo
+       negro del documento asomaba bajo el pie. `min-h-0` permite que un hijo
+       con `overflow` propio encolhaje en vez de desbordar la raíz.
        ================================================================ -->
   <div class="flex min-h-0 flex-1">
     <aside
@@ -208,7 +209,10 @@
          Este panel es el único con scroll propio: la cabecera y el índice
          permanecen fijos mientras el titular recorre las microsecciones.
          ============================================================== -->
-    <main class="min-h-0 min-w-0 flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 xl:p-8">
+    <main
+      appSoloLectura
+      class="min-h-0 min-w-0 flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 xl:p-8"
+    >
       <router-outlet />
     </main>
   </div>

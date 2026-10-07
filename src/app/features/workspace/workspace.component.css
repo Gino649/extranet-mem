@@ -297,7 +297,7 @@
  * de instrumentos.
  */
 .modal-panel {
-  @apply mx-auto my-4 flex h-[calc(100vh-4rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 lg:h-auto lg:max-h-[85vh];
+  @apply mx-auto my-4 flex h-[calc(100dvh-4rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 lg:h-auto lg:max-h-[85dvh];
   /* Sustituye a `shadow-2xl`: misma escala, con el doble filo interior que
      separa el panel del velo. Declarado aparte porque una regla `box-shadow`
      posterior anularía la utilidad. */
@@ -313,4 +313,121 @@
 .iga-tarjeta--seleccionada {
   @apply border-amber-500 bg-amber-50/60;
   box-shadow: 0 10px 30px rgb(245 158 11 / 0.18);
+}
+
+/* --------------------------------------------------------------------
+   POPUP DE ESTRATEGIA DE MODIFICACIÓN · Bifurcación IGA / ITS
+   ------------------------------------------------------------------ */
+
+/*
+ * Panel de la bifurcación. Reutiliza el velo esmerilado de
+ * `.modal-fondo`; a diferencia del selector de IGA no necesita alto completo
+ * (dos opciones caben en una laptop), así que solo acota su altura máxima y
+ * deja el scroll interno por si la alerta de ITS crece el contenido.
+ */
+.modal-modificacion-panel {
+  @apply flex max-h-[85dvh] w-full max-w-xl animate-zoom-in flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 select-none;
+  box-shadow:
+    0 30px 70px rgb(15 23 42 / 0.25),
+    inset 0 1px 0 rgb(255 255 255 / 1);
+}
+
+/*
+ * Tarjeta de opción del popup. Cada variante aporta su acento sobre el mismo
+ * fondo: ámbar para la re-evaluación significativa, azul para el ITS.
+ */
+.opcion-modificacion {
+  @apply flex w-full items-start gap-4 rounded-xl border-2 border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-300;
+}
+
+.opcion-modificacion--significativa:hover {
+  @apply -translate-y-0.5 border-amber-500 bg-amber-500/[0.01];
+}
+
+.opcion-modificacion--its:hover {
+  @apply -translate-y-0.5 border-blue-500 bg-blue-500/[0.01];
+}
+
+/* Estado activo de la Opción 2, mientras la alerta técnica está visible. */
+.opcion-modificacion--its-activa {
+  @apply border-blue-500 bg-blue-500/[0.01];
+}
+
+/*
+ * Panel del catálogo de comunicaciones y obligaciones posteriores. Ancho mayor
+ * que la bifurcación para que la matriz ID_NOTA / Descripción / Artículo
+ * respire; la tabla interna lleva su propio desplazamiento vertical y su
+ * cabecera queda fija con `thead sticky`.
+ */
+.modal-comunicaciones-panel {
+  @apply flex max-h-[85dvh] w-full max-w-3xl animate-zoom-in flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 select-none;
+  box-shadow:
+    0 30px 70px rgb(15 23 42 / 0.25),
+    inset 0 1px 0 rgb(255 255 255 / 1);
+}
+
+/* --------------------------------------------------------------------
+   ENTRADAS DEL POPUP Y DEL AVISO
+   ------------------------------------------------------------------ */
+
+/* La cortina y el popup existen cuando el titular abre el formulario, no
+   desde el arranque: la entrada suave marca ese cambio de nivel sin mover
+   el layout. */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: aparecer 0.18s ease-out;
+}
+
+/* El popup entra con un leve aumento además del fundido: es una capa nueva
+   sobre la pantalla, no un bloque que se recoloca dentro del flujo. */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-zoom-in {
+  animation: entrar 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-zoom-in {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------
+   IMPRESIÓN DEL EXPEDIENTE CONSOLIDADO
+   Al descargar el PDF, la consola completa queda fuera del documento y queda
+   únicamente el informe montado por `ReporteImpresionComponent`. Los modales
+   y avisos también se pliegan: no deben colarse en la captura.
+   ------------------------------------------------------------------ */
+
+@media print {
+  .cabecera,
+  .menu-lateral,
+  .boton-linea,
+  main,
+  .consola-pie,
+  .modal-fondo,
+  .aviso-its,
+  .aviso-comunicacion {
+    display: none !important;
+  }
 }

@@ -37,6 +37,7 @@ const COMPLEJIDAD_POR_IGA: Record<TipoIga, string> = {
   AIAI: 'Amplia Información de Impacto Ambiental',
   AISD: 'Integrada de Sulfuros',
   AISI: 'Integrada de Sustancias Inertes',
+  ITS: 'Informe Técnico Sustentatorio',
 };
 
 /**

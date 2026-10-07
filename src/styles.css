@@ -104,22 +104,24 @@
     @apply outline-2 outline-offset-2 outline-amber-500;
   }
 
-  /* Barra de desplazamiento discreta sobre superficies grafito. */
+  /* Barra de desplazamiento neutra, legible sobre superficies claras y oscuras.
+     Pista transparente: el brote que antes pintaba `bg-slate-950` dejaba una
+     banda negra junto a cada panel claro y un borde negro alrededor del pulgar. */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-slate-950;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply rounded-full border-2 border-slate-950 bg-slate-800;
+    @apply rounded-full border border-slate-300/70 bg-slate-400/40;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-700;
+    @apply bg-slate-500/55;
   }
 }
 
@@ -278,5 +280,27 @@
   /* El botón de plegar también es un control: hereda la escala de los demás. */
   .ol-attribution button {
     @apply cursor-pointer p-0 text-[10px] leading-none;
+  }
+
+  /* ======================================================================
+     6 · MODO SOLO LECTURA (consulta / impresión)
+
+     La clase la cuelga el guard `appSoloLectura` del contenedor de secciones.
+     El ocultado real vive en el DOM (hidden/disabled/contenteditable); estas
+     reglas solo refinan la apariencia y desactivan la zona de arrastre.
+     ====================================================================== */
+  .modo-lectura input,
+  .modo-lectura select,
+  .modo-lectura textarea {
+    cursor: not-allowed;
+  }
+
+  .modo-lectura label {
+    pointer-events: none;
+  }
+
+  .modo-lectura [contenteditable] {
+    pointer-events: none;
+    user-select: none;
   }
 }

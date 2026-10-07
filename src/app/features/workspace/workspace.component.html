@@ -1,4 +1,4 @@
-<div class="flex min-h-screen flex-col bg-slate-50 text-slate-800">
+<div class="flex min-h-dvh flex-col bg-slate-50 text-slate-800">
   <!-- ================================================================
        CABECERA SUPERIOR FIJA
        ================================================================ -->
@@ -134,6 +134,59 @@
       @switch (vistaActiva()) {
         @case ('SOLICITUDES') {
           <!-- ===== VISTA 1 · LISTADO DE SOLICITUDES ===== -->
+
+          <!-- Aviso de apertura de un expediente ITS derivado de un IGA aprobado -->
+          @if (avisoItsCreado()) {
+            <div
+              class="aviso-its mb-5 flex animate-fade-in items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs shadow-sm select-none"
+              role="status"
+              aria-live="polite"
+            >
+              <span
+                class="mt-0.5 flex size-2 shrink-0 justify-center rounded-sm bg-blue-500"
+                aria-hidden="true"
+              ></span>
+              <div class="flex-1 leading-relaxed text-blue-900">
+                <p class="text-[10px] font-black tracking-wide text-blue-800 uppercase">
+                  Apertura de Informe Técnico Sustentatorio
+                </p>
+                <p class="mt-1 font-semibold text-slate-700">{{ avisoItsCreado() }}</p>
+              </div>
+              <button
+                type="button"
+                class="shrink-0 cursor-pointer font-bold text-blue-500 transition-colors hover:text-blue-700"
+                aria-label="Descartar aviso"
+                (click)="cerrarAvisoIts()"
+              >
+                ✕
+              </button>
+            </div>
+          }
+
+          <!-- Aviso de apertura de un trámite derivado de obligación posterior -->
+          @if (avisoComunicacionCreado()) {
+            <div
+              class="aviso-comunicacion mb-5 flex animate-fade-in items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs shadow-sm select-none"
+              role="status"
+              aria-live="polite"
+            >
+              <span class="mt-0.5 text-base" aria-hidden="true">💼</span>
+              <div class="flex-1 leading-relaxed text-slate-700">
+                <p class="text-[10px] font-black tracking-wide text-amber-800 uppercase">
+                  Trámite derivado de Obligación Posterior
+                </p>
+                <p class="mt-1 font-semibold">{{ avisoComunicacionCreado() }}</p>
+              </div>
+              <button
+                type="button"
+                class="shrink-0 cursor-pointer font-bold text-amber-600 transition-colors hover:text-amber-800"
+                aria-label="Descartar aviso"
+                (click)="cerrarAvisoComunicacion()"
+              >
+                ✕
+              </button>
+            </div>
+          }
 
           <!-- Tarjeta buscador -->
           <section class="tarjeta-elevada" aria-label="Buscador de expedientes">
@@ -272,7 +325,7 @@
                             <button
                               type="button"
                               class="boton-fila"
-                              (click)="consultar(expediente)"
+                              (click)="ingresarAFormularioModoConsulta(expediente.id)"
                             >
                               👁️ Consultar
                             </button>
@@ -515,5 +568,303 @@
         </div>
       </div>
     </div>
+  }
+
+  <!-- ================================================================
+       POPUP CENTRALIZADO · Estrategia de Modificación del IGA
+       Discrimina entre la re-evaluación significativa del formulario IGA
+       y el trámite derivado ITS (modificación no significativa).
+       ================================================================ -->
+  @if (modalModificacionAbierto()) {
+    <div class="modal-fondo" (click)="cerrarModalModificacion()">
+      <div
+        class="modal-modificacion-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-modificacion-titulo"
+        (click)="$event.stopPropagation()"
+      >
+        <div
+          class="mb-4 flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 pb-3"
+        >
+          <div>
+            <p class="text-[10px] font-bold tracking-[0.25em] text-amber-700 uppercase">
+              Modificación de IGA aprobado
+            </p>
+            <h4
+              id="modal-modificacion-titulo"
+              class="mt-1 text-xs font-black tracking-tight text-slate-900 uppercase"
+            >
+              Estrategia de Modificación del IGA
+            </h4>
+            <p class="mt-0.5 text-[10px] font-bold text-slate-400 uppercase">
+              Expediente de Referencia: {{ expedienteIdEnModificacion() }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="boton-tenue !px-2.5 !py-1.5"
+            aria-label="Cerrar"
+            (click)="cerrarModalModificacion()"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="flex-1 space-y-4 overflow-y-auto pr-1">
+          <!-- OPCIÓN 1 · MODIFICACIÓN SIGNIFICATIVA -->
+          <button
+            type="button"
+            class="opcion-modificacion opcion-modificacion--significativa"
+            (click)="irAlFormularioIgaModificacion()"
+          >
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-lg font-bold text-amber-600 select-none"
+              aria-hidden="true"
+            >
+              📈
+            </span>
+            <span class="flex-1 text-left">
+              <span class="block text-xs font-black tracking-wide text-slate-900 uppercase">
+                Opción 1: Modificación Significativa
+              </span>
+              <span class="mt-1 block text-[11px] leading-relaxed font-medium text-slate-500">
+                Aplica para variaciones mayores en la envergadura del proyecto, reubicaciones
+                críticas de componentes o incremento sustancial de plataformas.
+                <strong class="text-slate-700">
+                  Se dará apertura al Formulario IGA completo para re-evaluación.
+                </strong>
+              </span>
+            </span>
+            <span class="pt-2 text-sm font-black text-slate-300 select-none" aria-hidden="true">
+              ➔
+            </span>
+          </button>
+
+          <!-- OPCIÓN 2 · MODIFICACIÓN NO SIGNIFICATIVA (ITS) -->
+          <button
+            type="button"
+            class="opcion-modificacion opcion-modificacion--its"
+            [class.opcion-modificacion--its-activa]="mostrarAlertaIts()"
+            (click)="seleccionarOpcionItsNoSignificativa()"
+          >
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-lg font-bold text-blue-600 select-none"
+              aria-hidden="true"
+            >
+              📋
+            </span>
+            <span class="flex-1 text-left">
+              <span class="block text-xs font-black tracking-wide text-slate-900 uppercase">
+                Opción 2: Modificación No Significativa - ITS
+              </span>
+              <span class="mt-1 block text-[11px] leading-relaxed font-medium text-slate-500">
+                Aplica para optimizaciones tecnológicas menores, adición de componentes auxiliares o
+                variaciones que no generen impactos ambientales negativos acumulativos
+                significativos.
+              </span>
+            </span>
+            <span class="pt-2 text-sm font-black text-slate-300 select-none" aria-hidden="true">
+              ➔
+            </span>
+          </button>
+
+          <!-- ALERTA TÉCNICA REACTIVA: se revela al elegir la Opción 2 -->
+          @if (mostrarAlertaIts()) {
+            <div
+              class="flex animate-fade-in items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs shadow-inner select-none"
+            >
+              <span
+                class="mt-1.5 size-2 shrink-0 animate-ping rounded-sm bg-blue-500"
+                aria-hidden="true"
+              ></span>
+              <div class="flex-1 space-y-1.5 leading-relaxed">
+                <p class="text-[10px] font-black tracking-wide text-blue-800 uppercase">
+                  Notificación del Ecosistema SEAL del MINEM:
+                </p>
+                <p class="font-semibold text-slate-700">
+                  Al confirmar esta acción, el sistema
+                  <span class="font-black text-slate-950">
+                    creará y aperturará un nuevo expediente tipo ITS (Informe Técnico Sustentatorio)
+                  </span>
+                  en su bandeja, vinculándolo como un hito derivado del IGA aprobado para
+                  simplificar sus plazos de evaluación.
+                </p>
+                <div class="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    class="cursor-pointer rounded-lg bg-blue-600 px-4 py-1.5 text-[10px] font-black tracking-wider text-white uppercase shadow-sm transition-all hover:bg-blue-700"
+                    (click)="confirmarAperturaExpedienteIts()"
+                  >
+                    ✓ Confirmar Creación de ITS
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="flex shrink-0 justify-end border-t border-slate-100 pt-3 mt-4 select-none">
+          <button
+            type="button"
+            class="cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+            (click)="cerrarModalModificacion()"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================================================================
+       MODAL CENTRALIZADO · Catálogo de Comunicaciones y Obligaciones
+       Posteriores filtrado por el estado del expediente de referencia.
+       ================================================================ -->
+  @if (modalComunicacionesAbierto()) {
+    <div class="modal-fondo" (click)="cerrarModalComunicaciones()">
+      <div
+        class="modal-comunicaciones-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-comunicaciones-titulo"
+        (click)="$event.stopPropagation()"
+      >
+        <!-- Cabecera del catálogo -->
+        <div
+          class="mb-4 flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 pb-3 select-none"
+        >
+          <div>
+            <p class="text-[10px] font-bold tracking-[0.25em] text-amber-700 uppercase">
+              Control de Trámites Corrientes
+            </p>
+            <h4
+              id="modal-comunicaciones-titulo"
+              class="mt-1 text-xs font-black tracking-tight text-slate-900 uppercase"
+            >
+              Comunicaciones y Obligaciones Posteriores
+            </h4>
+            <p class="mt-0.5 text-[10px] font-bold text-slate-400 uppercase">
+              Expediente Origen: {{ expedienteActivoId() }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="boton-tenue !px-2.5 !py-1.5"
+            aria-label="Cerrar"
+            (click)="cerrarModalComunicaciones()"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Alerta dinámica de filtrado por estado (aprobado) -->
+        <div
+          class="mb-4 flex animate-fade-in items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs shadow-inner select-none"
+        >
+          <span class="mt-0.5 text-base" aria-hidden="true">💡</span>
+          <div class="flex-1 leading-relaxed font-semibold text-slate-700">
+            <p class="mb-0.5 text-[10px] font-black tracking-wide text-amber-800 uppercase">
+              Control de Ciclo de Vida del Expediente:
+            </p>
+            <p>
+              Las opciones desplegadas a continuación se han
+              <span class="font-black text-slate-950">
+                filtrado automáticamente basándose en el estado de "APROBADO"
+              </span>
+              de la solicitud de referencia. Solo se muestran los actos y reportes legalmente
+              habilitados para esta fase.
+            </p>
+          </div>
+        </div>
+
+        <!-- Buscador interno del catálogo -->
+        <div class="relative mb-3 shadow-inner select-none">
+          <span class="absolute top-1/2 left-3 -translate-y-1/2 text-xs" aria-hidden="true">
+            🔍
+          </span>
+          <input
+            type="text"
+            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-4 pl-8 text-xs font-medium text-slate-900 shadow-inner focus:border-amber-500 focus:bg-white focus:outline-none"
+            placeholder="Buscar comunicación por palabra clave o artículo legal..."
+            [value]="busquedaFiltroNota()"
+            (input)="buscarNota($event)"
+          />
+        </div>
+
+        <!-- Matriz derivada de la hoja de cálculo: texto sin edición en línea -->
+        <div
+          class="flex-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/20 shadow-inner"
+        >
+          <table class="w-full border-collapse text-left text-xs">
+            <thead
+              class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[9px] font-bold select-none"
+            >
+              <tr>
+                <th class="p-3 w-16 text-center">ID_NOTA</th>
+                <th class="p-3 text-left">Descripción de la Obligación / Comunicación</th>
+                <th class="p-3 w-56 text-left">Artículo de Referencia (DESC_ARTICULO)</th>
+                <th class="p-3 w-20 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (nota of catalogoNotasFiltrado(); track nota.idNota) {
+                <tr
+                  class="border-b border-slate-100 bg-white font-medium text-slate-700 transition-colors hover:bg-slate-50/40"
+                >
+                  <td
+                    class="p-3 text-center bg-slate-50/30 font-mono font-bold text-slate-400 select-none"
+                  >
+                    {{ nota.idNota.toFixed(2) }}
+                  </td>
+                  <td class="p-3 pr-4 text-left leading-relaxed font-bold text-slate-900">
+                    {{ nota.descripcion }}
+                  </td>
+                  <td
+                    class="p-3 text-left bg-amber-500/[0.01] text-[11px] font-semibold text-amber-800"
+                  >
+                    {{ nota.articulo }}
+                  </td>
+                  <td class="p-3 text-center">
+                    <button
+                      type="button"
+                      class="cursor-pointer rounded-lg bg-slate-900 px-2.5 py-1 text-[10px] font-bold text-white uppercase shadow-sm transition-all hover:bg-slate-800"
+                      (click)="iniciarTramiteComunicacionDerivada(nota)"
+                    >
+                      Iniciar
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td
+                    colspan="4"
+                    class="bg-white p-5 text-center font-semibold text-slate-400 select-none"
+                  >
+                    No se encontraron obligaciones complementarias que correspondan a su criterio de
+                    búsqueda.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pie de cierre del catálogo -->
+        <div class="mt-4 flex shrink-0 justify-end border-t border-slate-100 pt-3 select-none">
+          <button
+            type="button"
+            class="cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+            (click)="cerrarModalComunicaciones()"
+          >
+            Cerrar Catálogo
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (reporteAbierto()) {
+    <app-reporte-impresion [expediente]="expedienteParaImprimir()" />
   }
 </div>
