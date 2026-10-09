@@ -54,7 +54,6 @@ const RETARDO_TRANSMISION_MS = 3500;
 export class FormularioIgaComponent {
   protected readonly store = inject(DaexStore);
 
-  /** Navegación del router; la usa el botón de escape al workspace. */
   private readonly router = inject(Router);
 
   /** Árbol de capítulos con el semáforo resuelto. */

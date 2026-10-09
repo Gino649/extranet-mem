@@ -90,18 +90,51 @@
    3 · CAPA BASE DEL DOCUMENTO
    ==================================================================== */
 @layer base {
+  /* Sanitización del lienzo: `html`/`body` ocupan el alto del documento sin
+     márgenes ni relleno heredados y pintan el gris cemento institucional
+     #f8fafc (slate-50). El fondo grafito que hubo aquí era la fuente de las
+     franjas negras al pie en laptop: cualquier hueco de layout o barra de
+     herramientas abierta (F12) dejaba ver ese negro bajo el contenido. */
   html,
   body {
     height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f8fafc;
   }
 
   body {
-    @apply bg-slate-950 font-sans text-slate-100 antialiased;
+    @apply bg-slate-50 font-sans text-slate-800 antialiased;
   }
 
-  /* Foco visible y coherente con el acento oro mineral en todo el sistema. */
-  :focus-visible {
-    @apply outline-2 outline-offset-2 outline-amber-500;
+  /* `app-root` es un elemento personalizado: por defecto es `inline`, lo que
+     añade espacio fantasma bajo sus hijos y evita que `height: 100%` resuelva.
+     Se ancla como bloque al alto del documento y hereda el mismo fondo, para
+     que ninguna ruta quede sobre un lienzo transparente. */
+  app-root {
+    display: block;
+    height: 100%;
+    background-color: #f8fafc;
+  }
+
+  /* Pie institucional clavado al fondo (sticky footer): dentro de un
+     contenedor flex en columna el margen superior `auto` empuja el footer al
+     borde inferior cuando el contenido es más corto que el viewport; el resto
+     de sus reglas viven en `.consola-pie` de cada feature. */
+  footer {
+    margin-top: auto;
+  }
+
+  html.formulario-activo,
+  body.formulario-activo {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  html.formulario-activo app-root,
+  body.formulario-activo app-root {
+    height: 100dvh;
+    overflow: hidden;
   }
 
   /* Barra de desplazamiento neutra, legible sobre superficies claras y oscuras.

@@ -101,6 +101,18 @@ describe('WorkspaceComponent', () => {
       expect(menu.classList.contains('menu-lateral--cerrado')).toBe(true);
     });
 
+    it('acompaña el aside al crecimiento del cuerpo con self-stretch', async () => {
+      const { raiz } = await montar();
+      const menu = elemento<HTMLElement>(raiz, 'aside');
+      const cuerpo = menu.parentElement;
+
+      // El contenedor mantiene `items-start` para que el botón de despliegue
+      // conserve su alto natural; el aside lo anula para llegar hasta la base
+      // del contenido y no dejar un tramo de fondo desnudo al hacer scroll.
+      expect(cuerpo?.classList.contains('items-start')).toBe(true);
+      expect(menu.classList.contains('self-stretch')).toBe(true);
+    });
+
     it('cierra el layout con un footer de créditos institucionales', async () => {
       const { raiz } = await montar();
       const pie = elemento<HTMLElement>(raiz, 'footer');

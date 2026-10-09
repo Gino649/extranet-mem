@@ -77,8 +77,16 @@
        ================================================================ -->
   <div class="flex flex-1 items-start">
     <!-- ---------- MENÚ LATERAL ---------- -->
+    <!--
+      `self-stretch` anula el `items-start` del contenedor solo para el aside:
+      el bloque crece hasta la altura real del cuerpo (que es la del contenido
+      central cuando la vista es larga). Sin él, la caja blanca del menú y su
+      filete derecho terminaban a media página y, al bajar el scroll, quedaba
+      un tramo de fondo desnudo junto al contenido. El botón de despliegue y el
+      panel central conservan su alto natural.
+    -->
     <aside
-      class="menu-lateral"
+      class="menu-lateral self-stretch"
       [class.menu-lateral--abierto]="!menuColapsado()"
       [class.menu-lateral--cerrado]="menuColapsado()"
       aria-label="Navegación principal de la extranet"

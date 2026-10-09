@@ -1,4 +1,4 @@
-<div class="flex h-dvh flex-col overflow-hidden bg-slate-50 text-slate-800">
+<div class="flex h-dvh flex-col bg-slate-50 text-slate-800">
   <!-- ================================================================
        HEADER SUPERIOR FIJO · Metadatos inmutables del trámite
        ================================================================ -->
@@ -131,6 +131,7 @@
               [class.capitulo-boton--activo]="capituloEnCurso() === capitulo.numero"
               [attr.aria-current]="capituloEnCurso() === capitulo.numero ? 'true' : null"
               [routerLink]="['/formulario-iga', capitulo.numero]"
+              queryParamsHandling="preserve"
             >
               <span
                 class="circulo-semaforo-indicador"

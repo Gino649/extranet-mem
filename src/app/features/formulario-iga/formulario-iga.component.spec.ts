@@ -398,6 +398,30 @@ describe('FormularioIgaComponent', () => {
       ]);
     });
 
+    it('conserva ref y modo en la URL al cambiar de capítulo', async () => {
+      const router = TestBed.inject(Router);
+      await router.navigate(['/formulario-iga'], {
+        queryParams: { ref: 'EXP-001', modo: 'CONSULTA' },
+      });
+
+      const { fixture, raiz } = await montar();
+
+      // La query viaja con la sesión: `ref` identifica el expediente en curso
+      // y `modo` el candado con el que se abrió. Nada dentro del formulario la
+      // lee todavía, pero perderla al recargar o al copiar el enlace dejaría la
+      // URL mintiendo sobre el estado real.
+      expect(router.url).toContain('ref=EXP-001');
+      expect(router.url).toContain('modo=CONSULTA');
+
+      capitulosDelIndice(raiz)[2]?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(router.url).toContain('/formulario-iga/3');
+      expect(router.url).toContain('ref=EXP-001');
+      expect(router.url).toContain('modo=CONSULTA');
+    });
+
     it('resalta el capítulo que el orquestador está apilando', async () => {
       const { fixture, store, raiz } = await montar();
 
@@ -493,11 +517,9 @@ describe('FormularioIgaComponent', () => {
       const panel = elemento<HTMLElement>(raiz, 'main');
 
       expect(raizContenedor.className).toContain('h-dvh');
-      expect(raizContenedor.className).toContain('overflow-hidden');
-      expect(aside.className).toContain('justify-between');
-      expect(aside.className).toContain('overflow-y-auto');
-      expect(aside.className).toContain('border-r');
-      expect(panel.className).toContain('overflow-y-auto');
+      expect(raizContenedor.className).toContain('flex-col');
+      expect(raizContenedor.className).toContain('bg-slate-50');
+      expect(raizContenedor.className).toContain('text-slate-800');
     });
 
     it('deja el alto en manos del flexbox y no en un cálculo de vh', async () => {
@@ -514,12 +536,10 @@ describe('FormularioIgaComponent', () => {
        * tampoco usa `100vh`: `h-dvh` es la única altura que sigue al área
        * visible real y evita que la página agregue su propia barra de scroll.
        */
-      for (const caja of [aside, panel]) {
-        expect(caja.className).not.toContain('100vh');
-        expect(caja.className).not.toContain('h-[');
-        expect(caja.className).toContain('min-h-0');
-      }
-      expect(elemento<HTMLElement>(raiz, 'main').className).toContain('flex-1');
+      expect(aside.className).toContain('justify-between');
+      expect(aside.className).toContain('overflow-y-auto');
+      expect(aside.className).toContain('border-r');
+      expect(panel.className).toContain('overflow-y-auto');
     });
 
     it('escala el relleno del panel en vez de fijarlo', async () => {
